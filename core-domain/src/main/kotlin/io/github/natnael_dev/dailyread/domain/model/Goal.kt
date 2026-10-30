@@ -28,3 +28,10 @@ data class GoalVersion(
     val effectiveFromDay: LogicalDay,
     val goal: Goal
 )
+
+fun List<GoalVersion>.activeGoalFor(day: LogicalDay): Goal {
+    return this.filter { it.effectiveFromDay <= day }
+        .maxByOrNull { it.effectiveFromDay }
+        ?.goal ?: Goal.DEFAULT
+}
+

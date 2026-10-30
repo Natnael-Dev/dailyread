@@ -63,6 +63,17 @@ class LogicalDayCalculator(
     }
 
     /**
+     * Flags backward wall clock jumps when monotonic/elapsedRealtime advanced normally (SC-19).
+     */
+    fun isClockSuspect(
+        wallClockStart: Instant,
+        wallClockEnd: Instant,
+        elapsedRealtimeDeltaMs: Long
+    ): Boolean {
+        return elapsedRealtimeDeltaMs > 0 && wallClockEnd.isBefore(wallClockStart)
+    }
+
+    /**
      * Splits an interval crossing logical day boundaries (e.g. 03:00) into separate intervals.
      */
     fun splitIntervalAtBoundary(

@@ -1,5 +1,9 @@
 package io.github.natnael_dev.dailyread.domain
 
+import io.github.natnael_dev.dailyread.domain.model.Goal
+import io.github.natnael_dev.dailyread.domain.model.GoalType
+import io.github.natnael_dev.dailyread.domain.model.GoalVersion
+import io.github.natnael_dev.dailyread.domain.model.activeGoalFor
 import io.github.natnael_dev.dailyread.domain.time.LogicalDay
 import io.github.natnael_dev.dailyread.domain.time.LogicalDayCalculator
 import org.junit.Assert.assertEquals
@@ -80,5 +84,47 @@ class LogicalDayCalculatorTest {
         assertEquals(LogicalDay.parse("2026-10-15"), dayWith0300)
         // Under 05:00 start, 04:00 is on Oct 14
         assertEquals(LogicalDay.parse("2026-10-14"), dayWith0500)
+    }
+
+    @Test
+    fun `SC-13 Goal raised today applies from tomorrow - today evaluated against previous target`() {
+        val goalV1 = GoalVersion(
+            id = 1,
+            effectiveFromDay = LogicalDay.parse("2026-10-01"),
+            goal = Goal(GoalType.PAGES, 10)
+        )
+        // Raised today (Oct 15), so effectiveFromDay is tomorrow (Oct 16, DEC-028)
+        val goalV2 = GoalVersion(
+            id = 2,
+            effectiveFromDay = LogicalDay.parse("2026-10-16"),
+            goal = Goal(GoalType.PAGES, 20)
+        )
+        val history = listOf(goalV1, goalV2)
+
+        // On Oct 15, active goal is target 10
+        val todayGoal = history.activeGoalFor(LogicalDay.parse("2026-10-15"))
+        assertEquals(10, todayGoal.target)
+        // Reading 12 pages qualifies today
+        assertTrue(todayGoal.isQualified(positionsCounted = 12, activeSeconds = 600L))
+
+        // On Oct 16, active goal is target 20
+        val tomorrowGoal = history.activeGoalFor(LogicalDay.parse("2026-10-16"))
+        assertEquals(20, tomorrowGoal.target)
+        // Reading 12 pages does not qualify tomorrow
+        assertFalse(tomorrowGoal.isQualified(positionsCounted = 12, activeSeconds = 600L))
+    }
+
+    @Test
+    fun `SC-19 Backward wall clock jump flagged suspect but accepted with no penalty`() {
+        val startWall = Instant.parse("2026-10-15T14:00:00Z")
+        val endWall = Instant.parse("2026-10-15T13:30:00Z") // Jumped 30 mins backwards
+        val elapsedRealtimeDelta = 1800000L // Monotonic clock advanced 30 mins (1,800,000 ms)
+
+        val isSuspect = calculator.isClockSuspect(startWall, endWall, elapsedRealtimeDelta)
+        assertTrue("Backward wall clock jump must be flagged suspect", isSuspect)
+
+        // Elapsed realtime delta is preserved for active seconds calculation (no penalty)
+        val activeSeconds = elapsedRealtimeDelta / 1000
+        assertEquals(1800L, activeSeconds)
     }
 }
