@@ -248,4 +248,32 @@ class LibraryViewModelTest {
         advanceUntilIdle()
         assertTrue(viewModel.uiState.value.isPermissionDenied)
     }
+
+    @Test
+    fun testCoverPathMappedToUiModel() = runTest(testDispatcher) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
+
+        val b1 = bookDao.insertBook(
+            BookEntity(
+                contentKey = "k_cover",
+                format = "EPUB",
+                title = "Book With Cover",
+                author = "Author",
+                sizeBytes = 1000L,
+                coverPath = "/data/user/0/io.github.natnael_dev.dailyread/files/covers/hash_cover.png",
+                addedAt = 100L
+            )
+        )
+        bookDao.insertBookSource(
+            BookSourceEntity(bookId = b1, documentUri = "u1", documentId = "d1", displayName = "b1.epub", sizeBytes = 10, lastModified = 10, lastSeenAt = 10)
+        )
+
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.filteredBooks.size)
+        assertEquals("/data/user/0/io.github.natnael_dev.dailyread/files/covers/hash_cover.png", state.filteredBooks[0].coverPath)
+    }
 }

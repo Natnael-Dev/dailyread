@@ -29,7 +29,8 @@ data class BookItemUiModel(
     val currentPositionDisplay: String,
     val readingStatus: ReadingStatus,
     val isMissing: Boolean,
-    val fingerprintState: String
+    val fingerprintState: String,
+    val coverPath: String? = null
 )
 
 enum class ReadingStatus { ALL, READING, FINISHED, UNREAD }
@@ -138,7 +139,8 @@ class LibraryViewModel(
                 currentPositionDisplay = posDisplay,
                 readingStatus = status,
                 isMissing = isMissing,
-                fingerprintState = book.fingerprintState
+                fingerprintState = book.fingerprintState,
+                coverPath = book.coverPath
             )
         }
 

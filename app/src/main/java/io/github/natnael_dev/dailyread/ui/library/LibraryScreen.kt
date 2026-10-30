@@ -1,5 +1,6 @@
 package io.github.natnael_dev.dailyread.ui.library
 
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -8,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,16 +46,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.io.File
 import io.github.natnael_dev.dailyread.ui.theme.BotanicalBackground
 import io.github.natnael_dev.dailyread.ui.theme.BotanicalError
 import io.github.natnael_dev.dailyread.ui.theme.BotanicalErrorContainer
@@ -635,32 +641,55 @@ fun BookGridCard(book: BookItemUiModel) {
                         else BotanicalPrimaryFixed.copy(alpha = 0.5f)
                     )
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = book.title,
-                        style = BotanicalTypography.titleSmall,
-                        color = BotanicalOnSurface,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
+                val coverBitmap = remember(book.coverPath) {
+                    if (book.coverPath != null) {
+                        try {
+                            val f = File(book.coverPath)
+                            if (f.exists() && f.length() > 0) {
+                                BitmapFactory.decodeFile(book.coverPath)?.asImageBitmap()
+                            } else null
+                        } catch (e: Throwable) {
+                            null
+                        }
+                    } else null
+                }
+
+                if (coverBitmap != null) {
+                    Image(
+                        bitmap = coverBitmap,
+                        contentDescription = "Cover of ${book.title}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
-                    book.author?.let {
+                } else {
+                    // Designed placeholder tile using theme tokens
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            text = it,
-                            style = BotanicalTypography.bodySmall,
-                            color = BotanicalOnSurfaceVariant,
+                            text = book.title,
+                            style = BotanicalTypography.titleSmall,
+                            color = BotanicalOnSurface,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 4.dp)
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
                         )
+                        book.author?.let {
+                            Text(
+                                text = it,
+                                style = BotanicalTypography.bodySmall,
+                                color = BotanicalOnSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
                     }
                 }
 
@@ -795,7 +824,29 @@ fun BookListCard(book: BookItemUiModel) {
                     .background(if (book.format == "PDF") BotanicalSecondaryFixed else BotanicalPrimaryFixed),
                 contentAlignment = Alignment.Center
             ) {
-                Text(book.format, style = BotanicalTypography.labelSmall, fontWeight = FontWeight.Bold)
+                val listCover = remember(book.coverPath) {
+                    if (book.coverPath != null) {
+                        try {
+                            val f = File(book.coverPath)
+                            if (f.exists() && f.length() > 0) {
+                                BitmapFactory.decodeFile(book.coverPath)?.asImageBitmap()
+                            } else null
+                        } catch (e: Throwable) {
+                            null
+                        }
+                    } else null
+                }
+
+                if (listCover != null) {
+                    Image(
+                        bitmap = listCover,
+                        contentDescription = "Cover of ${book.title}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(book.format, style = BotanicalTypography.labelSmall, fontWeight = FontWeight.Bold)
+                }
             }
 
             Column(modifier = Modifier.weight(1f)) {
