@@ -6,11 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import io.github.natnael_dev.dailyread.data.db.DailyReadDatabase
+import io.github.natnael_dev.dailyread.data.ingest.AndroidPdfCoverExtractor
 import io.github.natnael_dev.dailyread.data.ingest.AndroidTreeDocumentProvider
 import io.github.natnael_dev.dailyread.data.ingest.IngestionEngine
 import io.github.natnael_dev.dailyread.ui.library.LibraryScreen
 import io.github.natnael_dev.dailyread.ui.library.LibraryViewModel
 import io.github.natnael_dev.dailyread.ui.theme.DailyReadTheme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -21,10 +23,15 @@ class MainActivity : ComponentActivity() {
 
         val database = DailyReadDatabase.getInstance(this)
         val documentProvider = AndroidTreeDocumentProvider(contentResolver)
+        val coversDirectory = File(filesDir, "covers")
         val ingestionEngine = IngestionEngine(
             bookDao = database.bookDao(),
             librarySourceDao = database.librarySourceDao(),
-            documentProvider = documentProvider
+            documentProvider = documentProvider,
+            coverDir = coversDirectory,
+            pdfCoverExtractor = { uriString ->
+                AndroidPdfCoverExtractor.renderFirstPage(contentResolver, uriString)
+            }
         )
 
         libraryViewModel = ViewModelProvider(

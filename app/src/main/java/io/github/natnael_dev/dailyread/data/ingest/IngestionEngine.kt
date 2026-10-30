@@ -25,7 +25,9 @@ class IngestionEngine(
     private val bookDao: BookDao,
     private val librarySourceDao: LibrarySourceDao,
     private val documentProvider: TreeDocumentProvider,
-    private val clock: Clock = Clock.systemUTC()
+    private val clock: Clock = Clock.systemUTC(),
+    private val coverDir: java.io.File? = null,
+    private val pdfCoverExtractor: (suspend (String) -> ByteArray?)? = null
 ) {
 
     /**
@@ -177,9 +179,29 @@ class IngestionEngine(
             } else {
                 // Read metadata using a new stream
                 val metadataStream = documentProvider.openInputStream(presentSource.documentUri)
-                val metadata = metadataStream?.use {
-                    BookMetadataExtractor.extractMetadata(book.format, it)
-                } ?: ExtractedMetadata(null, null, null)
+                val metadata = metadataStream?.use { stream ->
+                    BookMetadataExtractor.extractMetadata(
+                        format = book.format,
+                        inputStream = stream,
+                        pdfCoverProvider = if (pdfCoverExtractor != null) {
+                            { pdfCoverExtractor.invoke(presentSource.documentUri) }
+                        } else null
+                    )
+                } ?: ExtractedMetadata(null, null, null, null)
+
+                var coverPath: String? = book.coverPath
+                if (metadata.coverBytes != null && coverDir != null) {
+                    try {
+                        if (!coverDir.exists()) {
+                            coverDir.mkdirs()
+                        }
+                        val coverFile = java.io.File(coverDir, "$contentHash.png")
+                        coverFile.writeBytes(metadata.coverBytes)
+                        coverPath = coverFile.absolutePath
+                    } catch (e: Exception) {
+                        // Keep previous or null
+                    }
+                }
 
                 val updatedBook = book.copy(
                     contentKey = "hash:$contentHash",
@@ -187,6 +209,7 @@ class IngestionEngine(
                     title = metadata.title?.takeIf { it.isNotBlank() } ?: book.title,
                     author = metadata.author?.takeIf { it.isNotBlank() } ?: book.author,
                     totalUnits = metadata.totalUnits ?: book.totalUnits,
+                    coverPath = coverPath,
                     fingerprintState = "READY"
                 )
                 bookDao.updateBook(updatedBook)

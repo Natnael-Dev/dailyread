@@ -13,13 +13,19 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.InputStream
+import java.nio.file.Files
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class FakeBookDao : BookDao {
     private val books = mutableMapOf<Long, BookEntity>()
@@ -161,14 +167,22 @@ class IngestionEngineTest {
     private lateinit var librarySourceDao: FakeLibrarySourceDao
     private lateinit var documentProvider: FakeTreeDocumentProvider
     private lateinit var ingestionEngine: IngestionEngine
+    private lateinit var tempCoverDir: File
     private val fixedClock = Clock.fixed(Instant.parse("2026-10-30T10:00:00Z"), ZoneId.of("UTC"))
 
     @Before
     fun setup() {
+        tempCoverDir = Files.createTempDirectory("covers_test").toFile()
         bookDao = FakeBookDao()
         librarySourceDao = FakeLibrarySourceDao()
         documentProvider = FakeTreeDocumentProvider()
-        ingestionEngine = IngestionEngine(bookDao, librarySourceDao, documentProvider, fixedClock)
+        ingestionEngine = IngestionEngine(
+            bookDao = bookDao,
+            librarySourceDao = librarySourceDao,
+            documentProvider = documentProvider,
+            clock = fixedClock,
+            coverDir = tempCoverDir
+        )
     }
 
     @Test
@@ -330,5 +344,120 @@ class IngestionEngineTest {
         val book = bookDao.getBookById(1L)
         assertNotNull(book)
         assertEquals("Nature", book?.title)
+    }
+
+    @Test
+    fun testStage2EpubCoverExtractionSavesCoverAndSetsCoverPath() = runTest {
+        val sourceId = librarySourceDao.insertSource(
+            LibrarySourceEntity(treeUri = "content://tree/books", displayName = "Books", addedAt = 1000L)
+        )
+        val docUri = "content://tree/books/with_cover.epub"
+        val expectedCoverBytes = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A) // PNG magic
+        val epubBytes = createTestEpubBytes(hasCover = true, coverBytes = expectedCoverBytes)
+
+        documentProvider.documents.add(
+            ScannedDocument("doc_cov", docUri, "BookWithCover.epub", "application/epub+zip", epubBytes.size.toLong(), 2000L)
+        )
+        documentProvider.fileContents[docUri] = epubBytes
+
+        ingestionEngine.scanSource(sourceId)
+        ingestionEngine.fingerprintPendingBooks()
+
+        val book = bookDao.getBookById(1L)
+        assertNotNull(book)
+        assertEquals("READY", book?.fingerprintState)
+        assertEquals("Epub With Cover", book?.title)
+        assertEquals("Test Author", book?.author)
+        assertNotNull("coverPath must be populated when cover is extracted", book?.coverPath)
+
+        val coverFile = File(book!!.coverPath!!)
+        assertTrue("Cover file must exist on disk", coverFile.exists())
+        assertEquals(expectedCoverBytes.size.toLong(), coverFile.length())
+    }
+
+    @Test
+    fun testStage2FormatWithoutCoverYieldsNullCoverPath() = runTest {
+        val sourceId = librarySourceDao.insertSource(
+            LibrarySourceEntity(treeUri = "content://tree/books", displayName = "Books", addedAt = 1000L)
+        )
+        val docUri = "content://tree/books/no_cover.epub"
+        val epubBytes = createTestEpubBytes(hasCover = false)
+
+        documentProvider.documents.add(
+            ScannedDocument("doc_nocov", docUri, "BookWithoutCover.epub", "application/epub+zip", epubBytes.size.toLong(), 2000L)
+        )
+        documentProvider.fileContents[docUri] = epubBytes
+
+        ingestionEngine.scanSource(sourceId)
+        ingestionEngine.fingerprintPendingBooks()
+
+        val book = bookDao.getBookById(1L)
+        assertNotNull(book)
+        assertEquals("READY", book?.fingerprintState)
+        assertNull("coverPath must be null when format cannot yield a cover", book?.coverPath)
+    }
+
+    private fun createTestEpubBytes(hasCover: Boolean, coverBytes: ByteArray = byteArrayOf(1, 2, 3)): ByteArray {
+        val baos = ByteArrayOutputStream()
+        val zos = ZipOutputStream(baos)
+
+        zos.putNextEntry(ZipEntry("mimetype"))
+        zos.write("application/epub+zip".toByteArray())
+        zos.closeEntry()
+
+        zos.putNextEntry(ZipEntry("META-INF/container.xml"))
+        zos.write("""
+            <?xml version="1.0"?>
+            <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+                <rootfiles>
+                    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+                </rootfiles>
+            </container>
+        """.trimIndent().toByteArray())
+        zos.closeEntry()
+
+        zos.putNextEntry(ZipEntry("OEBPS/content.opf"))
+        val opf = if (hasCover) {
+            """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+                <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <dc:title>Epub With Cover</dc:title>
+                    <dc:creator>Test Author</dc:creator>
+                </metadata>
+                <manifest>
+                    <item id="cover" href="images/cover.png" media-type="image/png" properties="cover-image"/>
+                </manifest>
+                <spine>
+                    <itemref idref="cover"/>
+                </spine>
+            </package>
+            """.trimIndent()
+        } else {
+            """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+                <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <dc:title>Epub Without Cover</dc:title>
+                    <dc:creator>Test Author</dc:creator>
+                </metadata>
+                <manifest>
+                </manifest>
+                <spine>
+                </spine>
+            </package>
+            """.trimIndent()
+        }
+        zos.write(opf.toByteArray())
+        zos.closeEntry()
+
+        if (hasCover) {
+            zos.putNextEntry(ZipEntry("OEBPS/images/cover.png"))
+            zos.write(coverBytes)
+            zos.closeEntry()
+        }
+
+        zos.close()
+        return baos.toByteArray()
     }
 }
