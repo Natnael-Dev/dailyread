@@ -7,3 +7,6 @@ build/
 */build/
 .externalNativeBuild
 .cxx
+
+.kotlin/
+*.hprof

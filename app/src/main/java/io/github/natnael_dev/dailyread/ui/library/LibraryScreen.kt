@@ -88,7 +88,8 @@ import io.github.natnael_dev.dailyread.ui.theme.BotanicalTypography
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBookClick: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -209,12 +210,14 @@ fun LibraryScreen(
                     if (uiState.viewMode == ViewMode.GRID) {
                         BooksGrid(
                             books = uiState.filteredBooks,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            onBookClick = onBookClick
                         )
                     } else {
                         BooksList(
                             books = uiState.filteredBooks,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            onBookClick = onBookClick
                         )
                     }
 
@@ -590,7 +593,8 @@ fun FilterChip(
 @Composable
 fun BooksGrid(
     books: List<BookItemUiModel>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBookClick: (Long) -> Unit = {}
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -600,7 +604,7 @@ fun BooksGrid(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         items(books, key = { it.id }) { book ->
-            BookGridCard(book = book)
+            BookGridCard(book = book, onClick = { onBookClick(book.id) })
         }
     }
 }
@@ -608,7 +612,8 @@ fun BooksGrid(
 @Composable
 fun BooksList(
     books: List<BookItemUiModel>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBookClick: (Long) -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
@@ -616,15 +621,20 @@ fun BooksList(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(books, key = { it.id }) { book ->
-            BookListCard(book = book)
+            BookListCard(book = book, onClick = { onBookClick(book.id) })
         }
     }
 }
 
 @Composable
-fun BookGridCard(book: BookItemUiModel) {
+fun BookGridCard(
+    book: BookItemUiModel,
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = BotanicalSurfaceContainerLowest),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -803,9 +813,14 @@ fun BookGridCard(book: BookItemUiModel) {
 }
 
 @Composable
-fun BookListCard(book: BookItemUiModel) {
+fun BookListCard(
+    book: BookItemUiModel,
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = BotanicalSurfaceContainerLowest),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
