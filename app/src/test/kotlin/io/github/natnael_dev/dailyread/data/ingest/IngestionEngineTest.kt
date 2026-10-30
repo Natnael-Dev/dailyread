@@ -81,8 +81,13 @@ class FakeBookDao : BookDao {
         }
     }
 
-    override suspend fun upsertReadingPosition(position: ReadingPositionEntity) {}
-    override suspend fun getReadingPosition(bookId: Long): ReadingPositionEntity? = null
+    private val readingPositions = mutableMapOf<Long, ReadingPositionEntity>()
+
+    override suspend fun upsertReadingPosition(position: ReadingPositionEntity) {
+        readingPositions[position.bookId] = position
+    }
+
+    override suspend fun getReadingPosition(bookId: Long): ReadingPositionEntity? = readingPositions[bookId]
 
     override suspend fun getBookByContentHash(contentHash: String): BookEntity? =
         books.values.firstOrNull { it.contentHash == contentHash }

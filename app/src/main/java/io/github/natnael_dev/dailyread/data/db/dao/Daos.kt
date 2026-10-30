@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import io.github.natnael_dev.dailyread.data.db.entity.BookEntity
 import io.github.natnael_dev.dailyread.data.db.entity.BookSourceEntity
+import io.github.natnael_dev.dailyread.data.db.entity.BookmarkEntity
 import io.github.natnael_dev.dailyread.data.db.entity.DailyPositionEntity
 import io.github.natnael_dev.dailyread.data.db.entity.DailySummaryEntity
 import io.github.natnael_dev.dailyread.data.db.entity.GoalVersionEntity
@@ -153,4 +154,22 @@ interface LibrarySourceDao {
 
     @Query("SELECT * FROM library_source WHERE state = :state")
     suspend fun getSourcesByState(state: String): List<LibrarySourceEntity>
+}
+
+@Dao
+interface BookmarkDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBookmark(bookmark: BookmarkEntity): Long
+
+    @Query("SELECT * FROM bookmark WHERE book_id = :bookId ORDER BY created_at DESC")
+    fun getBookmarksForBook(bookId: Long): Flow<List<BookmarkEntity>>
+
+    @Query("SELECT * FROM bookmark WHERE book_id = :bookId ORDER BY created_at DESC")
+    suspend fun getBookmarksForBookList(bookId: Long): List<BookmarkEntity>
+
+    @Query("DELETE FROM bookmark WHERE id = :id")
+    suspend fun deleteBookmark(id: Long)
+
+    @Query("SELECT * FROM bookmark WHERE book_id = :bookId AND locator_json = :locatorJson LIMIT 1")
+    suspend fun getBookmarkByLocator(bookId: Long, locatorJson: String): BookmarkEntity?
 }

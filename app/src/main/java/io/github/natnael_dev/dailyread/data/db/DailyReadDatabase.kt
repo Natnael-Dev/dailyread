@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import io.github.natnael_dev.dailyread.data.db.dao.BookDao
+import io.github.natnael_dev.dailyread.data.db.dao.BookmarkDao
 import io.github.natnael_dev.dailyread.data.db.dao.LibrarySourceDao
 import io.github.natnael_dev.dailyread.data.db.dao.ReadingLedgerDao
 import io.github.natnael_dev.dailyread.data.db.dao.SettingsDao
@@ -44,6 +45,7 @@ abstract class DailyReadDatabase : RoomDatabase() {
     abstract fun readingLedgerDao(): ReadingLedgerDao
     abstract fun settingsDao(): SettingsDao
     abstract fun librarySourceDao(): LibrarySourceDao
+    abstract fun bookmarkDao(): BookmarkDao
 
     companion object {
         const val DATABASE_NAME = "dailyread.db"

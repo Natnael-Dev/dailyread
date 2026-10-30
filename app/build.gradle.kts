@@ -63,12 +63,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 
-    // Readium 3.1.1 (DEC-021)
+    // Readium 3.1.1 (DEC-021) and Fragment host
     implementation(libs.readium.shared)
     implementation(libs.readium.streamer)
     implementation(libs.readium.navigator)
     implementation(libs.readium.adapter.pdfium.navigator)
     implementation(libs.readium.adapter.pdfium.document)
+    implementation("androidx.fragment:fragment-ktx:1.8.6")
 
     // Room
     implementation(libs.room.runtime)
