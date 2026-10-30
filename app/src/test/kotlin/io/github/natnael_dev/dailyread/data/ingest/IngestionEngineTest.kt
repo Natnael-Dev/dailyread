@@ -25,11 +25,13 @@ class FakeBookDao : BookDao {
     private val books = mutableMapOf<Long, BookEntity>()
     private val sources = mutableMapOf<Long, BookSourceEntity>()
     private val booksFlow = MutableStateFlow<List<BookEntity>>(emptyList())
+    private val sourcesFlow = MutableStateFlow<List<BookSourceEntity>>(emptyList())
     private var nextBookId = 1L
     private var nextSourceId = 1L
 
     private fun updateFlows() {
         booksFlow.value = books.values.toList().sortedByDescending { it.addedAt }
+        sourcesFlow.value = sources.values.toList()
     }
 
     override suspend fun insertBook(book: BookEntity): Long {
@@ -56,6 +58,7 @@ class FakeBookDao : BookDao {
         val id = if (source.id == 0L) nextSourceId++ else source.id
         val entity = source.copy(id = id)
         sources[id] = entity
+        updateFlows()
         return id
     }
 
@@ -68,6 +71,7 @@ class FakeBookDao : BookDao {
     override suspend fun updateBookSourceState(sourceId: Long, state: String, seenAt: Long) {
         sources[sourceId]?.let {
             sources[sourceId] = it.copy(state = state, lastSeenAt = seenAt)
+            updateFlows()
         }
     }
 
@@ -85,6 +89,7 @@ class FakeBookDao : BookDao {
     override suspend fun updateBookSourceBookId(sourceId: Long, newBookId: Long) {
         sources[sourceId]?.let {
             sources[sourceId] = it.copy(bookId = newBookId)
+            updateFlows()
         }
     }
 
@@ -96,8 +101,7 @@ class FakeBookDao : BookDao {
 
     override suspend fun getAllBookSources(): List<BookSourceEntity> = sources.values.toList()
 
-    override fun getAllBookSourcesFlow(): Flow<List<BookSourceEntity>> =
-        MutableStateFlow(sources.values.toList())
+    override fun getAllBookSourcesFlow(): Flow<List<BookSourceEntity>> = sourcesFlow
 
     override fun searchBooks(query: String): Flow<List<BookEntity>> =
         booksFlow.map { list ->
