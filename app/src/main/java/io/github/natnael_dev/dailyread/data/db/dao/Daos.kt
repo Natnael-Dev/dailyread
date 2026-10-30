@@ -51,6 +51,30 @@ interface BookDao {
 
     @Query("SELECT * FROM reading_position WHERE book_id = :bookId")
     suspend fun getReadingPosition(bookId: Long): ReadingPositionEntity?
+
+    @Query("SELECT * FROM book WHERE content_hash = :contentHash LIMIT 1")
+    suspend fun getBookByContentHash(contentHash: String): BookEntity?
+
+    @Query("DELETE FROM book WHERE id = :id")
+    suspend fun deleteBookById(id: Long)
+
+    @Query("UPDATE book_source SET book_id = :newBookId WHERE id = :sourceId")
+    suspend fun updateBookSourceBookId(sourceId: Long, newBookId: Long)
+
+    @Query("SELECT * FROM book_source WHERE source_id = :sourceId")
+    suspend fun getSourcesForLibrarySource(sourceId: Long): List<BookSourceEntity>
+
+    @Query("SELECT * FROM book WHERE fingerprint_state != 'READY'")
+    suspend fun getBooksPendingFingerprint(): List<BookEntity>
+
+    @Query("SELECT * FROM book_source")
+    suspend fun getAllBookSources(): List<BookSourceEntity>
+
+    @Query("SELECT * FROM book_source")
+    fun getAllBookSourcesFlow(): Flow<List<BookSourceEntity>>
+
+    @Query("SELECT * FROM book WHERE title LIKE '%' || :query || '%' OR (author IS NOT NULL AND author LIKE '%' || :query || '%') ORDER BY added_at DESC")
+    fun searchBooks(query: String): Flow<List<BookEntity>>
 }
 
 @Dao
@@ -123,4 +147,10 @@ interface LibrarySourceDao {
 
     @Query("UPDATE library_source SET state = :state WHERE id = :id")
     suspend fun updateSourceState(id: Long, state: String)
+
+    @Query("SELECT * FROM library_source WHERE id = :id")
+    suspend fun getSourceById(id: Long): LibrarySourceEntity?
+
+    @Query("SELECT * FROM library_source WHERE state = :state")
+    suspend fun getSourcesByState(state: String): List<LibrarySourceEntity>
 }
