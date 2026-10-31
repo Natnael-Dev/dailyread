@@ -110,6 +110,16 @@ class ReaderHost(
                         } else {
                             throw RuntimeException("No primary source")
                         }
+                    } catch (e: io.github.natnael_dev.dailyread.data.reader.InsufficientStorageException) {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                activity,
+                                "Low device storage: Unable to open PDF. Please free up space.",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        viewModel.setErrorMessage("Device storage low: Unable to cache PDF for reading. Please free up space.")
+                        return@withContext
                     } catch (e: Exception) {
                         val fixture = File(activity.cacheDir, "sample.pdf")
                         if (!fixture.exists()) {

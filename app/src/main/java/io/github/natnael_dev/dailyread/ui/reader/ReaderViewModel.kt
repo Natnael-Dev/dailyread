@@ -201,6 +201,10 @@ class ReaderViewModel(
         }
     }
 
+    fun setErrorMessage(message: String) {
+        _uiState.update { it.copy(isLoading = false, errorMessage = message) }
+    }
+
     /**
      * Delete a specific bookmark by ID.
      */
