@@ -13,7 +13,7 @@ android {
         applicationId = "io.github.natnael_dev.dailyread"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
+        versionCode = 12
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -101,4 +101,5 @@ dependencies {
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.work.testing)
 }
