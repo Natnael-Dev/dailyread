@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import org.readium.r2.shared.publication.Locator
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,6 +105,15 @@ fun ReaderScreen(
 
     // Intercept hardware / system back to persist and navigate
     BackHandler {
+        val loc = readerHost.getCurrentLocator()
+        if (loc != null) {
+            viewModel.onLocatorChanged(
+                locatorJson = loc.toJSON().toString(),
+                progression = loc.locations.totalProgression ?: loc.locations.progression ?: 0.0,
+                pageNumber = loc.locations.position,
+                chapterTitle = loc.title
+            )
+        }
         viewModel.onPause()
         onBack()
     }
@@ -112,12 +122,30 @@ fun ReaderScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                val loc = readerHost.getCurrentLocator()
+                if (loc != null) {
+                    viewModel.onLocatorChanged(
+                        locatorJson = loc.toJSON().toString(),
+                        progression = loc.locations.totalProgression ?: loc.locations.progression ?: 0.0,
+                        pageNumber = loc.locations.position,
+                        chapterTitle = loc.title
+                    )
+                }
                 viewModel.onPause()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            val loc = readerHost.getCurrentLocator()
+            if (loc != null) {
+                viewModel.onLocatorChanged(
+                    locatorJson = loc.toJSON().toString(),
+                    progression = loc.locations.totalProgression ?: loc.locations.progression ?: 0.0,
+                    pageNumber = loc.locations.position,
+                    chapterTitle = loc.title
+                )
+            }
             viewModel.onPause()
             readerHost.onDestroy()
         }
@@ -188,6 +216,15 @@ fun ReaderScreen(
                 .align(Alignment.TopEnd)
                 .padding(end = 24.dp)
                 .clickable {
+                    val loc = readerHost.getCurrentLocator()
+                    if (loc != null) {
+                        viewModel.onLocatorChanged(
+                            locatorJson = loc.toJSON().toString(),
+                            progression = loc.locations.totalProgression ?: loc.locations.progression ?: 0.0,
+                            pageNumber = loc.locations.position,
+                            chapterTitle = loc.title
+                        )
+                    }
                     viewModel.onUserInteraction()
                     viewModel.toggleBookmark()
                 }
@@ -242,6 +279,15 @@ fun ReaderScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = {
+                            val loc = readerHost.getCurrentLocator()
+                            if (loc != null) {
+                                viewModel.onLocatorChanged(
+                                    locatorJson = loc.toJSON().toString(),
+                                    progression = loc.locations.totalProgression ?: loc.locations.progression ?: 0.0,
+                                    pageNumber = loc.locations.position,
+                                    chapterTitle = loc.title
+                                )
+                            }
                             viewModel.onPause()
                             onBack()
                         }) {

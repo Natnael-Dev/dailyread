@@ -94,8 +94,8 @@ class PopulateLibraryDeviceTest {
     }
 
     @Test
-    fun populateLibraryForScreenshot() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+    fun populateLibraryForScreenshot(): Unit = runBlocking {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
         val db = DailyReadDatabase.getInstance(context)
         val bookDao = db.bookDao()
         val sourceDao = db.librarySourceDao()

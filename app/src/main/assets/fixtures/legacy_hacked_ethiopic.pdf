@@ -1,0 +1,40 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 3 0 R >> >> >>
+endobj
+5 0 obj
+<< /Length 759 >>
+stream
+BT /F1 14 Tf 40 730 Td (LEGACY HACKED ETHIOPIC FONT SIMULATION) Tj ET
+BT /F1 11 Tf 40 690 Td (Underlying ASCII text: 'b#mjm-rya qal nbr; qal-m b#Egziabher z#nd nbr') Tj ET
+BT /F1 11 Tf 40 660 Td (Intended visual reading: '[Amharic: BeMijemeriya Qal Nebere...]') Tj ET
+BT /F1 11 Tf 40 630 Td (FAILURE DOCUMENTATION FOR READLOOP:) Tj ET
+BT /F1 11 Tf 40 600 Td (1. Clipboard Copy: User copies text -> Pastes unintelligible ASCII junk.) Tj ET
+BT /F1 11 Tf 40 570 Td (2. Full-Text Search: Searching Ethiopic Unicode yields 0 results.) Tj ET
+BT /F1 11 Tf 40 540 Td (3. Text-to-Speech \(TTS\): Reads English phonetic noise instead of Amharic.) Tj ET
+BT /F1 11 Tf 40 510 Td (Verdict: ReadLoop must detect ASCII-hacked PDFs and prompt OCR or Unicode remapping.) Tj ET
+
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000183 00000 n 
+0000000309 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1119
+%%EOF
