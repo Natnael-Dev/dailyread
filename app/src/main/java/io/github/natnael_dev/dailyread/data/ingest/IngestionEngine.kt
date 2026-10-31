@@ -187,32 +187,45 @@ class IngestionEngine(
                             { pdfCoverExtractor.invoke(presentSource.documentUri) }
                         } else null
                     )
-                } ?: ExtractedMetadata(null, null, null, null)
+                } ?: ExtractedMetadata(null, null, null, null, isUnreadable = true)
 
-                var coverPath: String? = book.coverPath
-                if (metadata.coverBytes != null && coverDir != null) {
-                    try {
-                        if (!coverDir.exists()) {
-                            coverDir.mkdirs()
+                val isUnreadable = presentSource.sizeBytes == 0L || metadata.isUnreadable
+
+                if (isUnreadable) {
+                    val unreadableBook = book.copy(
+                        contentKey = "unreadable:${presentSource.documentId}_${clock.millis()}",
+                        contentHash = contentHash,
+                        fingerprintState = "UNREADABLE",
+                        totalUnits = 0
+                    )
+                    bookDao.updateBook(unreadableBook)
+                    bookDao.updateBookSourceState(presentSource.id, "UNREADABLE", clock.millis())
+                } else {
+                    var coverPath: String? = book.coverPath
+                    if (metadata.coverBytes != null && coverDir != null) {
+                        try {
+                            if (!coverDir.exists()) {
+                                coverDir.mkdirs()
+                            }
+                            val coverFile = java.io.File(coverDir, "$contentHash.png")
+                            coverFile.writeBytes(metadata.coverBytes)
+                            coverPath = coverFile.absolutePath
+                        } catch (e: Exception) {
+                            // Keep previous or null
                         }
-                        val coverFile = java.io.File(coverDir, "$contentHash.png")
-                        coverFile.writeBytes(metadata.coverBytes)
-                        coverPath = coverFile.absolutePath
-                    } catch (e: Exception) {
-                        // Keep previous or null
                     }
-                }
 
-                val updatedBook = book.copy(
-                    contentKey = "hash:$contentHash",
-                    contentHash = contentHash,
-                    title = metadata.title?.takeIf { it.isNotBlank() } ?: book.title,
-                    author = metadata.author?.takeIf { it.isNotBlank() } ?: book.author,
-                    totalUnits = metadata.totalUnits ?: book.totalUnits,
-                    coverPath = coverPath,
-                    fingerprintState = "READY"
-                )
-                bookDao.updateBook(updatedBook)
+                    val updatedBook = book.copy(
+                        contentKey = "hash:$contentHash",
+                        contentHash = contentHash,
+                        title = metadata.title?.takeIf { it.isNotBlank() } ?: book.title,
+                        author = metadata.author?.takeIf { it.isNotBlank() } ?: book.author,
+                        totalUnits = metadata.totalUnits ?: book.totalUnits,
+                        coverPath = coverPath,
+                        fingerprintState = "READY"
+                    )
+                    bookDao.updateBook(updatedBook)
+                }
             }
 
             completed++
