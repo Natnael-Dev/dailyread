@@ -3,8 +3,11 @@ package io.github.natnael_dev.dailyread
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,7 +18,11 @@ import androidx.fragment.app.FragmentActivity
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import io.github.natnael_dev.dailyread.data.backup.BackupEngine
 import io.github.natnael_dev.dailyread.data.db.DailyReadDatabase
+import io.github.natnael_dev.dailyread.data.db.entity.LibrarySourceEntity
+import io.github.natnael_dev.dailyread.data.db.entity.SettingEntity
 import io.github.natnael_dev.dailyread.data.ingest.AndroidPdfCoverExtractor
 import io.github.natnael_dev.dailyread.data.ingest.AndroidTreeDocumentProvider
 import io.github.natnael_dev.dailyread.data.ingest.IngestionEngine
@@ -24,10 +31,13 @@ import io.github.natnael_dev.dailyread.notifications.ReminderScheduler
 import io.github.natnael_dev.dailyread.ui.library.BottomNavBar
 import io.github.natnael_dev.dailyread.ui.library.LibraryScreen
 import io.github.natnael_dev.dailyread.ui.library.LibraryViewModel
+import io.github.natnael_dev.dailyread.ui.onboarding.OnboardingScreen
 import io.github.natnael_dev.dailyread.ui.plans.PlansScreen
 import io.github.natnael_dev.dailyread.ui.plans.PlansViewModel
 import io.github.natnael_dev.dailyread.ui.reader.ReaderScreen
 import io.github.natnael_dev.dailyread.ui.reader.ReaderViewModel
+import io.github.natnael_dev.dailyread.ui.settings.SettingsScreen
+import io.github.natnael_dev.dailyread.ui.settings.SettingsViewModel
 import io.github.natnael_dev.dailyread.ui.theme.DailyReadTheme
 import io.github.natnael_dev.dailyread.ui.today.TodayScreen
 import io.github.natnael_dev.dailyread.ui.today.TodayViewModel
@@ -45,6 +55,8 @@ class MainActivity : FragmentActivity() {
     private lateinit var todayViewModel: TodayViewModel
     private lateinit var libraryViewModel: LibraryViewModel
     private lateinit var plansViewModel: PlansViewModel
+    private lateinit var settingsViewModel: SettingsViewModel
+    private lateinit var ingestionEngine: IngestionEngine
 
     private var activeBookIdState = mutableStateOf<Long?>(null)
 
@@ -55,7 +67,7 @@ class MainActivity : FragmentActivity() {
         pdfReadingCache = PdfReadingCache(cacheDir = cacheDir)
         val documentProvider = AndroidTreeDocumentProvider(contentResolver)
         val coversDirectory = File(filesDir, "covers")
-        val ingestionEngine = IngestionEngine(
+        ingestionEngine = IngestionEngine(
             bookDao = database.bookDao(),
             librarySourceDao = database.librarySourceDao(),
             documentProvider = documentProvider,
@@ -106,6 +118,21 @@ class MainActivity : FragmentActivity() {
             }
         )[PlansViewModel::class.java]
 
+        val backupEngine = BackupEngine(database = database)
+        settingsViewModel = ViewModelProvider(
+            this,
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return SettingsViewModel(
+                        settingsDao = database.settingsDao(),
+                        readingLedgerDao = database.readingLedgerDao(),
+                        backupEngine = backupEngine
+                    ) as T
+                }
+            }
+        )[SettingsViewModel::class.java]
+
         // Handle initial deep link
         handleDeepLinkIntent(intent)
 
@@ -114,11 +141,61 @@ class MainActivity : FragmentActivity() {
         WidgetRolloverScheduler.scheduleNextRollover(this)
 
         setContent {
-            DailyReadTheme {
+            val settingsUiState by settingsViewModel.uiState.collectAsState()
+            val isSystemDark = isSystemInDarkTheme()
+            val darkTheme = when (settingsUiState.themeMode) {
+                "LIGHT" -> false
+                "DARK" -> true
+                else -> isSystemDark
+            }
+
+            DailyReadTheme(darkTheme = darkTheme) {
+                var showOnboarding by remember { mutableStateOf(false) }
                 var currentTab by remember { mutableStateOf("today") }
                 val activeReadingBookId = activeBookIdState.value
 
-                if (activeReadingBookId != null) {
+                LaunchedEffect(Unit) {
+                    val completed = database.settingsDao().getSetting("onboarding_completed")
+                    showOnboarding = completed != "true"
+                }
+
+                if (showOnboarding) {
+                    OnboardingScreen(
+                        onComplete = {
+                            lifecycleScope.launch {
+                                database.settingsDao().setSetting(
+                                    SettingEntity("onboarding_completed", "true")
+                                )
+                                showOnboarding = false
+                                todayViewModel.refresh()
+                            }
+                        },
+                        onSelectFolder = { treeUri ->
+                            contentResolver.takePersistableUriPermission(
+                                treeUri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                            lifecycleScope.launch {
+                                database.settingsDao().setSetting(
+                                    SettingEntity("onboarding_completed", "true")
+                                )
+                                val source = database.librarySourceDao().getSourceByTreeUri(treeUri.toString())
+                                val sourceId = source?.id ?: database.librarySourceDao().insertSource(
+                                    LibrarySourceEntity(
+                                        treeUri = treeUri.toString(),
+                                        displayName = treeUri.lastPathSegment?.substringAfterLast(':') ?: "Books",
+                                        addedAt = System.currentTimeMillis()
+                                    )
+                                )
+                                ingestionEngine.scanSource(sourceId)
+                                ingestionEngine.fingerprintPendingBooks()
+                                showOnboarding = false
+                                todayViewModel.refresh()
+                                libraryViewModel.rescanAllSources()
+                            }
+                        }
+                    )
+                } else if (activeReadingBookId != null) {
                     val currentBookId = activeReadingBookId
                     val readerViewModel = remember(currentBookId) {
                         ReaderViewModel(
@@ -158,6 +235,30 @@ class MainActivity : FragmentActivity() {
                             "plans" -> PlansScreen(
                                 viewModel = plansViewModel,
                                 onBookClick = { bookId -> activeBookIdState.value = bookId }
+                            )
+                            "settings" -> SettingsScreen(
+                                viewModel = settingsViewModel,
+                                onRelinkFolder = { treeUri ->
+                                    contentResolver.takePersistableUriPermission(
+                                        treeUri,
+                                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    )
+                                    lifecycleScope.launch {
+                                        val source = database.librarySourceDao().getSourceByTreeUri(treeUri.toString())
+                                        val sourceId = source?.id ?: database.librarySourceDao().insertSource(
+                                            LibrarySourceEntity(
+                                                treeUri = treeUri.toString(),
+                                                displayName = treeUri.lastPathSegment?.substringAfterLast(':') ?: "Books",
+                                                addedAt = System.currentTimeMillis()
+                                            )
+                                        )
+                                        ingestionEngine.scanSource(sourceId)
+                                        ingestionEngine.fingerprintPendingBooks()
+                                        todayViewModel.refresh()
+                                        libraryViewModel.rescanAllSources()
+                                        plansViewModel.refresh()
+                                    }
+                                }
                             )
                         }
 

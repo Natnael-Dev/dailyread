@@ -92,6 +92,24 @@ class FakeReadingLedgerDao : ReadingLedgerDao {
     override suspend fun getActiveGoalForDay(logicalDay: String): GoalVersionEntity? =
         goalVersions.filter { it.effectiveFromDay <= logicalDay }
             .maxByOrNull { it.effectiveFromDay }
+
+    override suspend fun getAllIntervals(): List<ReadingIntervalEntity> = intervals.toList()
+    override suspend fun insertIntervals(intervals: List<ReadingIntervalEntity>) {
+        this.intervals.addAll(intervals)
+    }
+    override suspend fun getAllDailyPositions(): List<DailyPositionEntity> = dailyPositions.toList()
+    override suspend fun insertDailyPositions(positions: List<DailyPositionEntity>) {
+        dailyPositions.addAll(positions)
+    }
+    override suspend fun insertDailySummaries(summaries: List<DailySummaryEntity>) {
+        for (s in summaries) {
+            dailySummaries[s.logicalDay] = s
+        }
+    }
+    override suspend fun getAllGoalVersions(): List<GoalVersionEntity> = goalVersions.toList()
+    override suspend fun insertGoalVersions(goalVersions: List<GoalVersionEntity>) {
+        this.goalVersions.addAll(goalVersions)
+    }
 }
 
 class FakePlanDao : PlanDao {
@@ -128,6 +146,16 @@ class FakePlanDao : PlanDao {
         MutableStateFlow(plans.values.firstOrNull { it.bookId == bookId && it.state == "ACTIVE" })
 
     override fun getAllPlansFlow(): Flow<List<PlanEntity>> = plansFlow
+
+    override suspend fun getAllPlansSync(): List<PlanEntity> = plans.values.toList().sortedBy { it.id }
+
+    override suspend fun insertPlans(plans: List<PlanEntity>) {
+        for (p in plans) {
+            val id = if (p.id == 0L) nextId++ else p.id
+            this.plans[id] = p.copy(id = id)
+        }
+        updateFlow()
+    }
 
     override suspend fun deletePlan(id: Long) {
         plans[id]?.let {

@@ -67,6 +67,16 @@ class FakeBookmarkDao : BookmarkDao {
     override suspend fun getBookmarkByLocator(bookId: Long, locatorJson: String): BookmarkEntity? {
         return bookmarks.values.firstOrNull { it.bookId == bookId && it.locatorJson == locatorJson }
     }
+
+    override suspend fun getAllBookmarks(): List<BookmarkEntity> = bookmarks.values.toList().sortedBy { it.id }
+
+    override suspend fun insertBookmarks(bookmarks: List<BookmarkEntity>) {
+        for (b in bookmarks) {
+            val id = if (b.id == 0L) nextId++ else b.id
+            this.bookmarks[id] = b.copy(id = id)
+        }
+        updateFlow()
+    }
 }
 
 class FakeReadingLedgerDao : ReadingLedgerDao {
@@ -103,6 +113,18 @@ class FakeReadingLedgerDao : ReadingLedgerDao {
     override suspend fun getQualifyingDays(): List<DailySummaryEntity> = emptyList()
     override suspend fun insertGoalVersion(goalVersion: GoalVersionEntity): Long = 1L
     override suspend fun getActiveGoalForDay(logicalDay: String): GoalVersionEntity? = null
+
+    override suspend fun getAllIntervals(): List<ReadingIntervalEntity> = recordedIntervals.toList()
+    override suspend fun insertIntervals(intervals: List<ReadingIntervalEntity>) {
+        recordedIntervals.addAll(intervals)
+    }
+    override suspend fun getAllDailyPositions(): List<DailyPositionEntity> = recordedDailyPositions.toList()
+    override suspend fun insertDailyPositions(positions: List<DailyPositionEntity>) {
+        recordedDailyPositions.addAll(positions)
+    }
+    override suspend fun insertDailySummaries(summaries: List<DailySummaryEntity>) {}
+    override suspend fun getAllGoalVersions(): List<GoalVersionEntity> = emptyList()
+    override suspend fun insertGoalVersions(goalVersions: List<GoalVersionEntity>) {}
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

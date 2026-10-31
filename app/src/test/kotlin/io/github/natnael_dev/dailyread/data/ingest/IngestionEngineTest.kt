@@ -118,6 +118,38 @@ class FakeBookDao : BookDao {
         booksFlow.map { list ->
             list.filter { it.title.contains(query, ignoreCase = true) || (it.author?.contains(query, ignoreCase = true) == true) }
         }
+
+    override suspend fun getAllBooksSync(): List<BookEntity> = books.values.toList().sortedBy { it.id }
+
+    override suspend fun insertBooks(books: List<BookEntity>) {
+        for (b in books) {
+            val id = if (b.id == 0L) nextBookId++ else b.id
+            this.books[id] = b.copy(id = id)
+        }
+        updateFlows()
+    }
+
+    override suspend fun insertBookSources(sources: List<BookSourceEntity>) {
+        for (s in sources) {
+            val id = if (s.id == 0L) nextSourceId++ else s.id
+            this.sources[id] = s.copy(id = id)
+        }
+        updateFlows()
+    }
+
+    override suspend fun getAllReadingPositions(): List<ReadingPositionEntity> = readingPositions.values.toList()
+
+    override suspend fun insertReadingPositions(positions: List<ReadingPositionEntity>) {
+        for (p in positions) {
+            readingPositions[p.bookId] = p
+        }
+    }
+
+    override suspend fun findSourceByDocumentId(documentId: String): BookSourceEntity? =
+        sources.values.firstOrNull { it.documentId == documentId }
+
+    override suspend fun findSourceByFilenameAndSize(displayName: String, sizeBytes: Long): BookSourceEntity? =
+        sources.values.firstOrNull { it.displayName == displayName && it.sizeBytes == sizeBytes }
 }
 
 class FakeLibrarySourceDao : LibrarySourceDao {
@@ -152,6 +184,15 @@ class FakeLibrarySourceDao : LibrarySourceDao {
 
     override suspend fun getSourcesByState(state: String): List<LibrarySourceEntity> =
         sources.values.filter { it.state == state }
+
+    override suspend fun getAllSourcesSync(): List<LibrarySourceEntity> = sources.values.toList().sortedBy { it.id }
+
+    override suspend fun insertSources(sources: List<LibrarySourceEntity>) {
+        for (s in sources) {
+            val id = if (s.id == 0L) nextId++ else s.id
+            this.sources[id] = s.copy(id = id)
+        }
+    }
 }
 
 class FakeTreeDocumentProvider : TreeDocumentProvider {

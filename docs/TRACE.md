@@ -1,8 +1,8 @@
-# Traceability Matrix: Phase 1, Phase 2, Phase 3, Phase 4 & Phase 5 Requirements and Scenarios
+# Traceability Matrix: Phase 1 to Phase 8 Requirements and Scenarios
 
 **Project:** DailyRead  
 **Application ID:** `io.github.natnael_dev.dailyread`  
-**Current Gate:** Phase 5 Complete (Background WorkManager Reminders & Jetpack Glance Widget)  
+**Current Gate:** Phase 6 Complete & Phase 8 Release Ready  
 **Date:** 2026-10-31  
 
 ---
@@ -103,7 +103,18 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 
 ---
 
-### Phase 8: Release Pipeline, ABI Splits & Licenses (BS-09)
+## 7. Phase 6 — Backup/Restore, Onboarding & Settings
+
+| Scenario / Req ID | Specification / Behavior Description | Production Code Path | Test Implementation Path | Evidence Location | Status |
+|---|---|---|---|---|---|
+| **DEC-029 / DEC-040** | Strict offline JSON backup export (`ACTION_CREATE_DOCUMENT`) and restore (`ACTION_OPEN_DOCUMENT`) serializing all Room entities (Books, BookSources, Positions, Bookmarks, Intervals, DailyPositions, Summaries, Goals, Plans, Settings, LibrarySources) while excluding cache and temporary files. | `:app` [`BackupEngine.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/data/backup/BackupEngine.kt), [`SimpleJson.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/data/backup/SimpleJson.kt) | `:app` [`BackupEngineTest.kt`](file:///C:/Dev/dailyread-phase6/app/src/test/kotlin/io/github/natnael_dev/dailyread/data/backup/BackupEngineTest.kt) (4 unit tests), [`BackupRestoreDeviceTest.kt`](file:///C:/Dev/dailyread-phase6/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/BackupRestoreDeviceTest.kt) | `evidence/phase-6.md` | `VERIFIED` |
+| **BS-04** | Critical UX SAF re-permission flow: immediately prompts user after backup restore to re-select folder trees via `ACTION_OPEN_DOCUMENT_TREE` to relink book source permissions and preserve progress. | `:app` [`SettingsViewModel.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/ui/settings/SettingsViewModel.kt), [`SettingsScreen.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/ui/settings/SettingsScreen.kt) | `:app` (device) [`BackupRestoreDeviceTest.kt#testMockBackupRestoreAndSafRePermissionFlow`](file:///C:/Dev/dailyread-phase6/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/BackupRestoreDeviceTest.kt), [`SettingsViewModelTest.kt`](file:///C:/Dev/dailyread-phase6/app/src/test/kotlin/io/github/natnael_dev/dailyread/ui/settings/SettingsViewModelTest.kt) | `evidence/phase-6.md` | `VERIFIED` |
+| **ONBOARD-STITCH** | 3-screen welcome flow matching Stitch design (`dailyread_welcome_onboarding`): Screen 1 (Value prop: offline, private, habit-first), Screen 2 (SAF zero-copy local storage), Screen 3 (SAF folder picker trigger); shown on first run only and tracked in Room Settings. | `:app` [`OnboardingScreen.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/ui/onboarding/OnboardingScreen.kt), [`MainActivity.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/MainActivity.kt) | Live device execution on `Pixel_6_API_34` (Android 14) | `evidence/phase-6.md`, `evidence/screenshots/onboarding_screen1.png`, `evidence/screenshots/onboarding_screen2.png`, `evidence/screenshots/onboarding_screen3.png` | `VERIFIED` |
+| **SETTINGS-UI** | Settings screen with Appearance (System/Light/Dark) dynamic theme switcher, daily goal stepper & preset chips, backup export/import triggers, and Open Source Licenses dialog. | `:app` [`SettingsScreen.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/ui/settings/SettingsScreen.kt), [`SettingsViewModel.kt`](file:///C:/Dev/dailyread-phase6/app/src/main/java/io/github/natnael_dev/dailyread/ui/settings/SettingsViewModel.kt) | `:app` [`SettingsViewModelTest.kt`](file:///C:/Dev/dailyread-phase6/app/src/test/kotlin/io/github/natnael_dev/dailyread/ui/settings/SettingsViewModelTest.kt) (6 unit tests), Live device execution on `Pixel_6_API_34` | `evidence/phase-6.md`, `evidence/screenshots/settings_screen.png`, `evidence/screenshots/settings_backup_restore.png`, `evidence/screenshots/settings_licenses.png` | `VERIFIED` |
+
+---
+
+## 8. Phase 8 — Release Pipeline, ABI Splits & Licenses (BS-09)
 
 | Requirement / Component | Design / Intent | Code Implementation | Verification / Tests | Artifacts / Evidence | Status |
 |---|---|---|---|---|---|
@@ -114,7 +125,7 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 
 ---
 
-## 7. Test Class Coverage Summary
+## 9. Test Class Coverage Summary
 
 | Module | Test Class | Test Count | Pass / Fail | Primary Domain / Scope |
 |---|---|---|---|---|
@@ -122,12 +133,14 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 | `:core-domain` | `ReadingPlanTest` | 6 | 6 / 0 | Pure-domain reading plan calculations, daily quotas, on-track status |
 | `:core-domain` | `ReadingTrackerTest` | 10 | 10 / 0 | Reading session tracker rules, dwell, jumps, timeouts, boundaries |
 | `:core-domain` | `StreakEngineTest` | 10 | 10 / 0 | Pure streak engine rules, freezes, caps, travel grace, break handling |
+| `:app` | `BackupEngineTest` | 4 | 4 / 0 | Pure JSON serialization, round-trip Room entities, Unicode handling, malformed recovery |
 | `:app` | `IngestionEngineTest` | 6 | 6 / 0 | Two-stage ingestion, content dedup, cover extraction & missing-file handling |
 | `:app` | `PdfReadingCacheTest` | 5 | 5 / 0 | Bounded MRU PDF reading cache bounds, LRU eviction, file lifecycle |
 | `:app` | `ReminderCopySelectorTest` | 6 | 6 / 0 | Behavioral reminder copy engine, bandit tones, loss aversion, surrender hook |
 | `:app` | `ReminderSchedulerTest` | 4 | 4 / 0 | Inexact WorkManager reminder delay computation, 20:00 target, overnight wrap |
 | `:app` | `LibraryViewModelTest` | 9 | 9 / 0 | Library UI state machine, filter ribbon, search, sorting, coverPath mapping |
 | `:app` | `ReaderViewModelTest` | 5 | 5 / 0 | Reader state machine, exact resume restore, bookmarks, typography preferences |
+| `:app` | `SettingsViewModelTest` | 6 | 6 / 0 | Theme switching, goal stepper/clamping, export, BS-04 relink prompt, licenses dialog |
 | `:app` | `ThemeTokensTest` | 4 | 4 / 0 | Warm botanical editorial color tokens, typography & shape contracts |
 | `:app` | `TodayViewModelTest` | 6 | 6 / 0 | Today dashboard UI state machine, progress ring, 30-day matrix, 03:00 rollover |
 | `:app` | `WidgetStateDeriverTest` | 2 | 2 / 0 | Glance widget Room state derivation, streak calculation, snapshot persistence |
@@ -137,7 +150,7 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 | `:app` (device) | `ReaderResumeDeviceTest` | 4 | 4 / 0 | Device exact resume across process lifecycle, PDF cache, bookmarks, Amharic EPUB |
 | `:app` (device) | `SafRebootPersistenceTest` | 1 | 1 / 0 | SAF persistable tree URI permission survival across cold device reboot |
 | `:app` (device) | `PopulateLibraryDeviceTest` | 1 | 1 / 0 | Library population with synthetic fixtures and honest covers on device |
-| `:app` (device) | `BackupRestoreDeviceTest` | 1 | 1 / 0 | End-to-end SQLite archive backup export and restore verification |
+| `:app` (device) | `BackupRestoreDeviceTest` | 1 | 1 / 0 | End-to-end SQLite archive backup export, BS-04 SAF re-permission flow, and re-export verification |
 | `:app` (device) | `DailyReminderWorkerDeviceTest` | 2 | 2 / 0 | WorkManager worker suppression when goal met, successful execution when not met |
 | `:app` (device) | `GlanceWidgetDeviceTest` | 3 | 3 / 0 | Device widget state Room derivation, deep link intent, and 03:00 rollover worker |
-| **Total Automated Tests** | **22 Test Classes** | **105 Tests** | **105 Passed (100%)** | **Zero failing tests** |
+| **Total Automated Tests** | **24 Test Classes** | **115 Tests** | **115 Passed (100%)** | **Zero failing tests** |

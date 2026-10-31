@@ -77,6 +77,27 @@ interface BookDao {
 
     @Query("SELECT * FROM book WHERE title LIKE '%' || :query || '%' OR (author IS NOT NULL AND author LIKE '%' || :query || '%') ORDER BY added_at DESC")
     fun searchBooks(query: String): Flow<List<BookEntity>>
+
+    @Query("SELECT * FROM book ORDER BY id ASC")
+    suspend fun getAllBooksSync(): List<BookEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBooks(books: List<BookEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBookSources(sources: List<BookSourceEntity>)
+
+    @Query("SELECT * FROM reading_position")
+    suspend fun getAllReadingPositions(): List<ReadingPositionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertReadingPositions(positions: List<ReadingPositionEntity>)
+
+    @Query("SELECT * FROM book_source WHERE document_id = :documentId LIMIT 1")
+    suspend fun findSourceByDocumentId(documentId: String): BookSourceEntity?
+
+    @Query("SELECT * FROM book_source WHERE display_name = :displayName AND size_bytes = :sizeBytes LIMIT 1")
+    suspend fun findSourceByFilenameAndSize(displayName: String, sizeBytes: Long): BookSourceEntity?
 }
 
 @Dao
@@ -116,6 +137,27 @@ interface ReadingLedgerDao {
 
     @Query("SELECT * FROM goal_version WHERE effective_from_day <= :logicalDay ORDER BY effective_from_day DESC LIMIT 1")
     suspend fun getActiveGoalForDay(logicalDay: String): GoalVersionEntity?
+
+    @Query("SELECT * FROM reading_interval ORDER BY id ASC")
+    suspend fun getAllIntervals(): List<ReadingIntervalEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertIntervals(intervals: List<ReadingIntervalEntity>)
+
+    @Query("SELECT * FROM daily_position")
+    suspend fun getAllDailyPositions(): List<DailyPositionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDailyPositions(positions: List<DailyPositionEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDailySummaries(summaries: List<DailySummaryEntity>)
+
+    @Query("SELECT * FROM goal_version ORDER BY id ASC")
+    suspend fun getAllGoalVersions(): List<GoalVersionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGoalVersions(goalVersions: List<GoalVersionEntity>)
 }
 
 @Dao
@@ -131,6 +173,12 @@ interface SettingsDao {
 
     @Query("SELECT * FROM widget_snapshot WHERE id = 1")
     suspend fun getWidgetSnapshot(): WidgetSnapshotEntity?
+
+    @Query("SELECT * FROM setting")
+    suspend fun getAllSettings(): List<SettingEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSettings(settings: List<SettingEntity>)
 }
 
 @Dao
@@ -140,6 +188,12 @@ interface LibrarySourceDao {
 
     @Query("SELECT * FROM library_source ORDER BY added_at DESC")
     fun getAllSources(): Flow<List<LibrarySourceEntity>>
+
+    @Query("SELECT * FROM library_source ORDER BY id ASC")
+    suspend fun getAllSourcesSync(): List<LibrarySourceEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSources(sources: List<LibrarySourceEntity>)
 
     @Query("SELECT * FROM library_source WHERE tree_uri = :treeUri")
     suspend fun getSourceByTreeUri(treeUri: String): LibrarySourceEntity?
@@ -167,6 +221,12 @@ interface BookmarkDao {
 
     @Query("SELECT * FROM bookmark WHERE book_id = :bookId ORDER BY created_at DESC")
     suspend fun getBookmarksForBookList(bookId: Long): List<BookmarkEntity>
+
+    @Query("SELECT * FROM bookmark ORDER BY id ASC")
+    suspend fun getAllBookmarks(): List<BookmarkEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBookmarks(bookmarks: List<BookmarkEntity>)
 
     @Query("DELETE FROM bookmark WHERE id = :id")
     suspend fun deleteBookmark(id: Long)
@@ -198,7 +258,12 @@ interface PlanDao {
     @Query("SELECT * FROM plan ORDER BY id DESC")
     fun getAllPlansFlow(): Flow<List<PlanEntity>>
 
+    @Query("SELECT * FROM plan ORDER BY id ASC")
+    suspend fun getAllPlansSync(): List<PlanEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlans(plans: List<PlanEntity>)
+
     @Query("UPDATE plan SET state = 'DELETED' WHERE id = :id")
     suspend fun deletePlan(id: Long)
 }
-
