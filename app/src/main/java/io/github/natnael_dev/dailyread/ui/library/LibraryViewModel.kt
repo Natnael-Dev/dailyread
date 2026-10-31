@@ -29,6 +29,7 @@ data class BookItemUiModel(
     val currentPositionDisplay: String,
     val readingStatus: ReadingStatus,
     val isMissing: Boolean,
+    val isUnreadable: Boolean = false,
     val fingerprintState: String,
     val coverPath: String? = null
 )
@@ -107,6 +108,7 @@ class LibraryViewModel(
             val bookSources = sourcesByBook[book.id] ?: emptyList()
             val hasPresent = bookSources.any { it.state == "PRESENT" }
             val isMissing = bookSources.isNotEmpty() && !hasPresent
+            val isUnreadable = book.fingerprintState == "UNREADABLE" || bookSources.any { it.state == "UNREADABLE" }
 
             val status = when {
                 book.finishedAt != null -> ReadingStatus.FINISHED
@@ -139,6 +141,7 @@ class LibraryViewModel(
                 currentPositionDisplay = posDisplay,
                 readingStatus = status,
                 isMissing = isMissing,
+                isUnreadable = isUnreadable,
                 fingerprintState = book.fingerprintState,
                 coverPath = book.coverPath
             )
