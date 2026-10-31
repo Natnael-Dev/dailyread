@@ -5,12 +5,14 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.natnael_dev.dailyread.data.db.dao.BookDao
+import io.github.natnael_dev.dailyread.data.db.dao.PlanDao
 import io.github.natnael_dev.dailyread.data.db.dao.ReadingLedgerDao
 import io.github.natnael_dev.dailyread.data.db.dao.SettingsDao
 import io.github.natnael_dev.dailyread.data.db.entity.BookEntity
 import io.github.natnael_dev.dailyread.data.db.entity.BookSourceEntity
 import io.github.natnael_dev.dailyread.data.db.entity.DailyPositionEntity
 import io.github.natnael_dev.dailyread.data.db.entity.DailySummaryEntity
+import io.github.natnael_dev.dailyread.data.db.entity.PlanEntity
 import io.github.natnael_dev.dailyread.data.db.entity.ReadingIntervalEntity
 import io.github.natnael_dev.dailyread.data.db.entity.SettingEntity
 import io.github.natnael_dev.dailyread.data.db.entity.WidgetSnapshotEntity
@@ -19,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,6 +34,7 @@ class LedgerDaoTest {
     private lateinit var bookDao: BookDao
     private lateinit var ledgerDao: ReadingLedgerDao
     private lateinit var settingsDao: SettingsDao
+    private lateinit var planDao: PlanDao
 
     @Before
     fun createDb() {
@@ -40,6 +44,7 @@ class LedgerDaoTest {
         bookDao = db.bookDao()
         ledgerDao = db.readingLedgerDao()
         settingsDao = db.settingsDao()
+        planDao = db.planDao()
     }
 
     @After
@@ -243,5 +248,44 @@ class LedgerDaoTest {
         assertEquals(7, retrieved?.streak)
         assertEquals(1, retrieved?.freezes)
         assertEquals(42L, retrieved?.lastBookId)
+    }
+
+    @Test
+    fun planDao_insertAndQueryActivePlan() = runBlocking(Dispatchers.IO) {
+        val bookId = bookDao.insertBook(
+            BookEntity(
+                contentKey = "plan-test-book",
+                format = "EPUB",
+                title = "Plan Book",
+                sizeBytes = 1000L,
+                addedAt = 1000L
+            )
+        )
+
+        val plan = PlanEntity(
+            bookId = bookId,
+            startDay = "2026-10-01",
+            targetDay = "2026-10-15",
+            startUnits = 0,
+            totalUnits = 300,
+            state = "ACTIVE"
+        )
+        val planId = planDao.insertPlan(plan)
+        assertTrue(planId > 0)
+
+        val activePlan = planDao.getActivePlan()
+        assertNotNull(activePlan)
+        assertEquals(bookId, activePlan?.bookId)
+        assertEquals("2026-10-15", activePlan?.targetDay)
+        assertEquals(300, activePlan?.totalUnits)
+
+        val activeForBook = planDao.getActivePlanForBook(bookId)
+        assertNotNull(activeForBook)
+        assertEquals(planId, activeForBook?.id)
+
+        // Delete (mark deleted)
+        planDao.deletePlan(planId)
+        val afterDelete = planDao.getActivePlan()
+        org.junit.Assert.assertNull(afterDelete)
     }
 }

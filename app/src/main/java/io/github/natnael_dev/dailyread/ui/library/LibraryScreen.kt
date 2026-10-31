@@ -89,7 +89,8 @@ import io.github.natnael_dev.dailyread.ui.theme.BotanicalTypography
 fun LibraryScreen(
     viewModel: LibraryViewModel,
     modifier: Modifier = Modifier,
-    onBookClick: (Long) -> Unit = {}
+    onBookClick: (Long) -> Unit = {},
+    onTabSelect: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -231,7 +232,8 @@ fun LibraryScreen(
 
             // Bottom Navigation Bar
             BottomNavBar(
-                activeTab = "library"
+                activeTab = "library",
+                onTabSelect = onTabSelect
             )
         }
 
@@ -1281,7 +1283,10 @@ fun ImportBottomSheet(
 }
 
 @Composable
-fun BottomNavBar(activeTab: String) {
+fun BottomNavBar(
+    activeTab: String,
+    onTabSelect: (String) -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1299,21 +1304,28 @@ fun BottomNavBar(activeTab: String) {
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                NavTabItem(title = "Today", icon = "☀️", selected = activeTab == "today")
-                NavTabItem(title = "Library", icon = "📚", selected = activeTab == "library")
-                NavTabItem(title = "Plans", icon = "🧭", selected = activeTab == "plans")
-                NavTabItem(title = "Settings", icon = "⚙️", selected = activeTab == "settings")
+                NavTabItem(title = "Today", icon = "☀️", selected = activeTab == "today", onClick = { onTabSelect("today") })
+                NavTabItem(title = "Library", icon = "📚", selected = activeTab == "library", onClick = { onTabSelect("library") })
+                NavTabItem(title = "Plans", icon = "🧭", selected = activeTab == "plans", onClick = { onTabSelect("plans") })
+                NavTabItem(title = "Settings", icon = "⚙️", selected = activeTab == "settings", onClick = { onTabSelect("settings") })
             }
         }
     }
 }
 
 @Composable
-fun NavTabItem(title: String, icon: String, selected: Boolean) {
+fun NavTabItem(
+    title: String,
+    icon: String,
+    selected: Boolean,
+    onClick: () -> Unit = {}
+) {
     if (selected) {
         Row(
             modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
                 .background(BotanicalPrimary.copy(alpha = 0.12f), RoundedCornerShape(999.dp))
+                .clickable(onClick = onClick)
                 .padding(horizontal = 14.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1328,7 +1340,10 @@ fun NavTabItem(title: String, icon: String, selected: Boolean) {
         }
     } else {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(icon, fontSize = 16.sp)

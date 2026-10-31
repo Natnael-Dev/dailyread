@@ -12,6 +12,7 @@ import io.github.natnael_dev.dailyread.data.db.entity.DailyPositionEntity
 import io.github.natnael_dev.dailyread.data.db.entity.DailySummaryEntity
 import io.github.natnael_dev.dailyread.data.db.entity.GoalVersionEntity
 import io.github.natnael_dev.dailyread.data.db.entity.LibrarySourceEntity
+import io.github.natnael_dev.dailyread.data.db.entity.PlanEntity
 import io.github.natnael_dev.dailyread.data.db.entity.ReadingIntervalEntity
 import io.github.natnael_dev.dailyread.data.db.entity.ReadingPositionEntity
 import io.github.natnael_dev.dailyread.data.db.entity.SettingEntity
@@ -173,3 +174,31 @@ interface BookmarkDao {
     @Query("SELECT * FROM bookmark WHERE book_id = :bookId AND locator_json = :locatorJson LIMIT 1")
     suspend fun getBookmarkByLocator(bookId: Long, locatorJson: String): BookmarkEntity?
 }
+
+@Dao
+interface PlanDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlan(plan: PlanEntity): Long
+
+    @Update
+    suspend fun updatePlan(plan: PlanEntity)
+
+    @Query("SELECT * FROM plan WHERE state = 'ACTIVE' LIMIT 1")
+    suspend fun getActivePlan(): PlanEntity?
+
+    @Query("SELECT * FROM plan WHERE state = 'ACTIVE' LIMIT 1")
+    fun getActivePlanFlow(): Flow<PlanEntity?>
+
+    @Query("SELECT * FROM plan WHERE book_id = :bookId AND state = 'ACTIVE' LIMIT 1")
+    suspend fun getActivePlanForBook(bookId: Long): PlanEntity?
+
+    @Query("SELECT * FROM plan WHERE book_id = :bookId AND state = 'ACTIVE' LIMIT 1")
+    fun getActivePlanForBookFlow(bookId: Long): Flow<PlanEntity?>
+
+    @Query("SELECT * FROM plan ORDER BY id DESC")
+    fun getAllPlansFlow(): Flow<List<PlanEntity>>
+
+    @Query("UPDATE plan SET state = 'DELETED' WHERE id = :id")
+    suspend fun deletePlan(id: Long)
+}
+

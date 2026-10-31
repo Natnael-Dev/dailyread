@@ -74,11 +74,37 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 
 ---
 
-## 5. Test Class Coverage Summary
+## 5. Phase 4 — "Today" Dashboard, Streak UI & Reading Plans
+
+| Scenario / Req ID | Specification / Behavior Description | Production Code Path | Test Implementation Path | Evidence Location | Status |
+|---|---|---|---|---|---|
+| **UI-TODAY-STITCH** | "Today" screen Compose implementation pixel-matched to Stitch `dailyread_today_dashboard` (code.html + screen.png). | `:app` [`TodayScreen.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayScreen.kt) | `:app` (device) [`TodayDashboardDeviceTest.kt#testTodayDashboardLaunchesSuccessfully`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/TodayDashboardDeviceTest.kt) | `evidence/phase-4.md`, `evidence/screenshots/today_dashboard.png` | `VERIFIED` |
+| **UI-PROGRESS-RING** | Daily progress circular canvas visualization of active pages read vs daily goal (default 10 pages) with quick-add action. | `:app` [`TodayScreen.kt#DailyProgressCard`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayScreen.kt), [`TodayViewModel.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayViewModel.kt) | `:app` [`TodayViewModelTest.kt#today progress ring reflects pages read against goal`](file:///C:/Dev/DailyRead/app/src/test/kotlin/io/github/natnael_dev/dailyread/ui/today/TodayViewModelTest.kt), [`TodayDashboardDeviceTest.kt#testQuickAddPagesIncrementsDatabase`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/TodayDashboardDeviceTest.kt) | `evidence/phase-4.md`, `evidence/screenshots/today_dashboard.png` | `VERIFIED` |
+| **STREAK-HERO** | Prominent celebrated streak display: current streak, personal best pill, freeze safeguards (1 per 7 days, max 2). | `:app` [`TodayScreen.kt#StreakHeroCard`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayScreen.kt), [`TodayViewModel.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayViewModel.kt) | `:app` [`TodayViewModelTest.kt#streak engine accurately reports consecutive days and freeze held`](file:///C:/Dev/DailyRead/app/src/test/kotlin/io/github/natnael_dev/dailyread/ui/today/TodayViewModelTest.kt) | `evidence/phase-4.md`, `evidence/screenshots/today_dashboard.png` | `VERIFIED` |
+| **MATRIX-30DAY** | 30-day botanical activity matrix mapping logical days to status levels (None, 1-5p, 6-15p, Goal met, Frozen) with interactive day selection. | `:app` [`TodayScreen.kt#ActivityMatrixCard`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayScreen.kt), [`TodayViewModel.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayViewModel.kt) | `:app` [`TodayViewModelTest.kt#30-day activity matrix contains exactly 30 days ending today`](file:///C:/Dev/DailyRead/app/src/test/kotlin/io/github/natnael_dev/dailyread/ui/today/TodayViewModelTest.kt) | `evidence/phase-4.md`, `evidence/screenshots/today_dashboard.png` | `VERIFIED` |
+| **CONTINUE-READING** | Currently reading hero card with book cover, progress bar, and large tap target button launching Phase 3 Reader. | `:app` [`TodayScreen.kt#CurrentlyReadingCard`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/today/TodayScreen.kt), [`MainActivity.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/MainActivity.kt) | `:app` (device) [`TodayDashboardDeviceTest.kt#testContinueReadingDeepLinkTarget`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/TodayDashboardDeviceTest.kt) | `evidence/phase-4.md`, `evidence/screenshots/today_dashboard.png` | `VERIFIED` |
+| **PLAN-ENGINE** | Pure-domain reading plan calculation engine (`ReadingPlan.kt`): daily quota, remaining days, on-track vs behind. | `:core-domain` [`ReadingPlan.kt`](file:///C:/Dev/DailyRead/core-domain/src/main/kotlin/io/github/natnael_dev/dailyread/domain/plan/ReadingPlan.kt) | `:core-domain` [`ReadingPlanTest.kt`](file:///C:/Dev/DailyRead/core-domain/src/test/kotlin/io/github/natnael_dev/dailyread/domain/plan/ReadingPlanTest.kt) (6 table-driven unit tests) | `evidence/phase-4.md` | `VERIFIED` |
+| **PLAN-UI** | Reading plans management screen & creation dialog with dynamic quota preview and target duration presets. | `:app` [`PlansScreen.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/plans/PlansScreen.kt), [`PlansViewModel.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/plans/PlansViewModel.kt) | `:app` (device) [`LedgerDaoTest.kt#planDao_insertAndQueryActivePlan`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/data/db/LedgerDaoTest.kt) | `evidence/phase-4.md`, `evidence/screenshots/plans_screen.png`, `evidence/screenshots/create_plan_dialog.png` | `VERIFIED` |
+| **NAV-DOCK** | Floating rounded bottom navigation dock linking Today, Library, and Plans. | `:app` [`MainActivity.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/MainActivity.kt), [`LibraryScreen.kt#BottomNavBar`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/library/LibraryScreen.kt) | Live device execution on `Pixel_6_API_34` | `evidence/phase-4.md`, `evidence/screenshots/today_dashboard.png`, `evidence/screenshots/plans_screen.png` | `VERIFIED` |
+
+
+---
+
+### Phase 8: Release Pipeline, ABI Splits & Licenses (BS-09)
+
+| Requirement / Component | Design / Intent | Code Implementation | Verification / Tests | Artifacts / Evidence | Status |
+|---|---|---|---|---|---|
+| **BS-09 (ABI Splits)** | Generate ABI-split APKs (`arm64-v8a`, `armeabi-v7a`) to enforce <30MB budget per split alongside universal APK fallback. | `:app` [`build.gradle.kts`](file:///C:/Dev/DailyRead/app/build.gradle.kts) (`splits.abi`) | `./gradlew assembleRelease` (arm64: 9.98 MB, armeabi-v7a: 8.98 MB, universal: 40.44 MB) | `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
+| **R8-RULES** | Keep Readium 3.1.1, Room 2.7.2, and Glance classes; aggressively shrink and strip all `android.util.Log` calls in release builds. | `:app` [`proguard-rules.pro`](file:///C:/Dev/DailyRead/app/proguard-rules.pro) | Emulator smoke test on `Pixel_6_API_34` (clean launch, PID 19159, zero crash) | `evidence/phase-8-release-pipeline.md`, `evidence/screenshots/release_smoke_test.png` | `VERIFIED` |
+| **CI-RELEASE** | GitHub Actions release workflow triggering on `v*` tag push, enforcing zero-INTERNET policy, checking size budgets, and drafting release. | `.github` [`workflows/release.yml`](file:///C:/Dev/DailyRead/.github/workflows/release.yml) | Verified YAML syntax, build and size budget assertions | `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
+| **LICENSES-REGISTRY**| Complete audit and provenance registry for third-party libraries, fonts, and assets. | `docs/research` [`LICENSES.md`](file:///C:/Dev/DailyRead/docs/research/LICENSES.md) | License compatibility check (Zero GPL/AGPL, Readium BSD-3, Room Apache-2.0, Fonts OFL-1.1) | `docs/research/LICENSES.md`, `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
+
+## 6. Test Class Coverage Summary
 
 | Module | Test Class | Test Count | Pass / Fail | Primary Domain / Scope |
 |---|---|---|---|---|
 | `:core-domain` | `LogicalDayCalculatorTest` | 6 | 6 / 0 | Logical day boundaries, clock jumps, interval splitting, goal versioning |
+| `:core-domain` | `ReadingPlanTest` | 6 | 6 / 0 | Pure-domain reading plan calculations, daily quotas, on-track status |
 | `:core-domain` | `ReadingTrackerTest` | 10 | 10 / 0 | Reading session tracker rules, dwell, jumps, timeouts, boundaries |
 | `:core-domain` | `StreakEngineTest` | 10 | 10 / 0 | Pure streak engine rules, freezes, caps, travel grace, break handling |
 | `:app` | `IngestionEngineTest` | 6 | 6 / 0 | Two-stage ingestion, content dedup, cover extraction & missing-file handling |
@@ -86,7 +112,11 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 | `:app` | `LibraryViewModelTest` | 9 | 9 / 0 | Library UI state machine, filter ribbon, search, sorting, coverPath mapping |
 | `:app` | `ReaderViewModelTest` | 5 | 5 / 0 | Reader state machine, exact resume restore, bookmarks, typography preferences |
 | `:app` | `ThemeTokensTest` | 4 | 4 / 0 | Warm botanical editorial color tokens, typography & shape contracts |
+| `:app` | `TodayViewModelTest` | 6 | 6 / 0 | Today dashboard UI state machine, progress ring, 30-day matrix, 03:00 rollover |
 | `:app` | `ManifestSecurityTest` | 2 | 2 / 0 | Zero INTERNET permission, allowBackup=false enforcement |
+| `:app` (device) | `TodayDashboardDeviceTest` | 3 | 3 / 0 | Device Today dashboard launch, continue reading target, quick-add database write |
+| `:app` (device) | `LedgerDaoTest` | 9 | 9 / 0 | Room DAO round-trip tests: Books, Ledger, Settings, Widget, and PlanDao |
 | `:app` (device) | `ReaderResumeDeviceTest` | 4 | 4 / 0 | Device exact resume across process lifecycle, PDF cache, bookmarks, Amharic EPUB |
 | `:app` (device) | `PopulateLibraryDeviceTest` | 1 | 1 / 0 | Library population with synthetic fixtures and honest covers on device |
-| **Total Automated Tests** | **11 Test Classes** | **62 Tests** | **62 Passed (100%)** | **Zero failing tests** |
+| **Total Automated Tests** | **15 Test Classes** | **86 Tests** | **86 Passed (100%)** | **Zero failing tests** |
+
