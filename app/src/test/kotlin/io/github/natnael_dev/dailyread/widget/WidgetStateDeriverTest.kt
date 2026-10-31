@@ -28,6 +28,13 @@ class FakeSettingsDao : SettingsDao {
     override suspend fun setSetting(setting: SettingEntity) { settings[setting.key] = setting.value }
     override suspend fun upsertWidgetSnapshot(snapshot: WidgetSnapshotEntity) { this.snapshot = snapshot }
     override suspend fun getWidgetSnapshot(): WidgetSnapshotEntity? = snapshot
+    override suspend fun getAllSettings(): List<SettingEntity> =
+        settings.map { SettingEntity(it.key, it.value) }
+    override suspend fun insertSettings(settings: List<SettingEntity>) {
+        for (s in settings) {
+            this.settings[s.key] = s.value
+        }
+    }
 }
 
 class FakeReadingLedgerDao : ReadingLedgerDao {
@@ -67,6 +74,23 @@ class FakeReadingLedgerDao : ReadingLedgerDao {
 
     override suspend fun getActiveGoalForDay(logicalDay: String): GoalVersionEntity? =
         goals.filter { it.effectiveFromDay <= logicalDay }.maxByOrNull { it.effectiveFromDay }
+
+    override suspend fun getAllIntervals(): List<ReadingIntervalEntity> = emptyList()
+    override suspend fun insertIntervals(intervals: List<ReadingIntervalEntity>) {}
+    override suspend fun getAllDailyPositions(): List<DailyPositionEntity> = positions.toList()
+    override suspend fun insertDailyPositions(positions: List<DailyPositionEntity>) {
+        this.positions.addAll(positions)
+    }
+    override suspend fun insertDailySummaries(summaries: List<DailySummaryEntity>) {
+        for (s in summaries) {
+            this.summaries.removeAll { it.logicalDay == s.logicalDay }
+            this.summaries.add(s)
+        }
+    }
+    override suspend fun getAllGoalVersions(): List<GoalVersionEntity> = goals.toList()
+    override suspend fun insertGoalVersions(goalVersions: List<GoalVersionEntity>) {
+        goals.addAll(goalVersions)
+    }
 }
 
 class WidgetStateDeriverTest {
