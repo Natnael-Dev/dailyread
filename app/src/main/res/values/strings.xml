@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DailyRead</string>
+    <string name="widget_name">DailyRead Habit</string>
+    <string name="widget_description">Track your daily reading progress, streak, and quickly continue reading.</string>
+</resources>
