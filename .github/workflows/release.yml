@@ -25,6 +25,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Verify zero-INTERNET manifest security policy
         run: |
           if grep -q "android.permission.INTERNET" app/src/main/AndroidManifest.xml; then
