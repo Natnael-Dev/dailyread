@@ -82,9 +82,18 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    // Jetpack Glance (App Widget)
+    implementation(libs.androidx.glance)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
+    // WorkManager (Background reminders & rollover)
+    implementation(libs.androidx.work.runtime.ktx)
+
     // Local unit tests
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.work.testing)
 
     // Instrumented tests
     androidTestImplementation(libs.junit)
