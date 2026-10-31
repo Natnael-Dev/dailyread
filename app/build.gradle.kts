@@ -13,7 +13,7 @@ android {
         applicationId = "io.github.natnael_dev.dailyread"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
+        versionCode = 12
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -122,9 +122,18 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    // Jetpack Glance (App Widget)
+    implementation(libs.androidx.glance)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
+    // WorkManager (Background reminders & rollover)
+    implementation(libs.androidx.work.runtime.ktx)
+
     // Local unit tests
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.work.testing)
 
     // Instrumented tests
     androidTestImplementation(libs.junit)
@@ -132,4 +141,5 @@ dependencies {
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.work.testing)
 }

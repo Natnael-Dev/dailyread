@@ -1,15 +1,15 @@
-# Traceability Matrix: Phase 1, Phase 2 & Phase 3 Requirements and Scenarios
+# Traceability Matrix: Phase 1, Phase 2, Phase 3, Phase 4 & Phase 5 Requirements and Scenarios
 
 **Project:** DailyRead  
 **Application ID:** `io.github.natnael_dev.dailyread`  
-**Current Gate:** Phase 3 Complete (Reader Engine, Exact Resume, Reader UI, Bookmarks & Reading Tracker)  
-**Date:** 2026-10-30  
+**Current Gate:** Phase 5 Complete (Background WorkManager Reminders & Jetpack Glance Widget)  
+**Date:** 2026-10-31  
 
 ---
 
 ## 1. Overview & Verification Legend
 
-Every requirement, architectural decision, and domain scenario from Phase 1 (Core Domain Engine & Security Invariants), Phase 2 (Design Ingestion, Ingestion Pipeline, Covers & Library UI), and Phase 3 (Reader Engine, Exact Resume, Reader UI, Bookmarks & Reading Tracker) is tracked to its production implementation, unit/instrumented test suites, and empirical evidence artifacts.
+Every requirement, architectural decision, and domain scenario from Phase 1 (Core Domain Engine & Security Invariants), Phase 2 (Design Ingestion, Ingestion Pipeline, Covers & Library UI), Phase 3 (Reader Engine, Exact Resume, Reader UI, Bookmarks & Reading Tracker), Phase 4 (Today Dashboard, Streak UI & Reading Plans), and Phase 5 (Background WorkManager Reminders & Jetpack Glance Home-Screen Widget) is tracked to its production implementation, unit/instrumented test suites, and empirical evidence artifacts.
 
 - **Status Code:**
   - `VERIFIED`: Proven with raw automated test execution or live device logs.
@@ -90,6 +90,19 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 
 ---
 
+## 6. Phase 5 — Background WorkManager Reminders & Jetpack Glance Widget
+
+| Scenario / Req ID | Specification / Behavior Description | Production Code Path | Test Implementation Path | Evidence Location | Status |
+|---|---|---|---|---|---|
+| **DEC-045-BANDIT** | Multi-armed bandit psychological reminder copy selector with 5 distinct tones: Loss Aversion, Urgency Escalation, Content Curiosity, Passive-Aggressive, and 3-Day Surrender Hook. | `:app` [`ReminderCopySelector.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/notifications/ReminderCopySelector.kt) | `:app` [`ReminderCopySelectorTest.kt`](file:///C:/Dev/DailyRead/app/src/test/kotlin/io/github/natnael_dev/dailyread/notifications/ReminderCopySelectorTest.kt) (6 unit tests) | `evidence/phase-5.md` | `VERIFIED` |
+| **DEC-034-REMIND** | Inexact daily reading reminders scheduled via WorkManager `PeriodicWorkRequest`, default ON, suppressed on daily goal satisfaction, botanical notification channel and reader deep link. | `:app` [`DailyReminderWorker.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/notifications/DailyReminderWorker.kt), [`ReminderScheduler.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/notifications/ReminderScheduler.kt) | `:app` [`ReminderSchedulerTest.kt`](file:///C:/Dev/DailyRead/app/src/test/kotlin/io/github/natnael_dev/dailyread/notifications/ReminderSchedulerTest.kt) (4 unit tests), [`DailyReminderWorkerDeviceTest.kt`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/notifications/DailyReminderWorkerDeviceTest.kt) (2 device tests) | `evidence/phase-5.md` | `VERIFIED` |
+| **ADR-007-GLANCE** | Read-only Jetpack Glance AppWidget displaying current streak, today's pages vs daily goal, botanical styling tokens, and "Continue Reading" deep-link action button. | `:app` [`DailyReadGlanceWidget.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/widget/DailyReadGlanceWidget.kt) | `:app` (device) [`GlanceWidgetDeviceTest.kt#testWidgetDerivesStateDirectlyFromRoom`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/widget/GlanceWidgetDeviceTest.kt) | `evidence/phase-5.md` | `VERIFIED` |
+| **ADR-007-DERIVE** | Render-time Room state derivation (`WidgetStateDeriver.kt`) extracting streak, today progress, active book, and progression, persisting `WidgetSnapshotEntity`. | `:app` [`WidgetStateDeriver.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/widget/WidgetStateDeriver.kt) | `:app` [`WidgetStateDeriverTest.kt`](file:///C:/Dev/DailyRead/app/src/test/kotlin/io/github/natnael_dev/dailyread/widget/WidgetStateDeriverTest.kt) (2 unit tests), [`GlanceWidgetDeviceTest.kt#testWidgetDerivesStateDirectlyFromRoom`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/widget/GlanceWidgetDeviceTest.kt) | `evidence/phase-5.md` | `VERIFIED` |
+| **ADR-007-ROLLOVER** | Inexact WorkManager widget rollover near 03:00 logical boundary (`WidgetRolloverWorker.kt`), plus reactive broadcasts on date/time/timezone/package update (`DailyReadWidgetReceiver.kt`). | `:app` [`WidgetRolloverWorker.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/widget/WidgetRolloverWorker.kt), [`DailyReadWidgetReceiver.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/widget/DailyReadWidgetReceiver.kt) | `:app` (device) [`GlanceWidgetDeviceTest.kt#testWidgetRolloverWorkerExecutesSuccessfully`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/widget/GlanceWidgetDeviceTest.kt) | `evidence/phase-5.md` | `VERIFIED` |
+| **WIDGET-DEEP-LINK** | Widget action callback and deep-link intent (`io.github.natnael_dev.dailyread.ACTION_OPEN_BOOK`, `bookId`) launching `MainActivity` directly into the last-read book reader. | `:app` [`DailyReadGlanceWidget.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/widget/DailyReadGlanceWidget.kt), [`MainActivity.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/MainActivity.kt) | `:app` (device) [`GlanceWidgetDeviceTest.kt#testWidgetDeepLinkIntentLaunchesAppToBook`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/widget/GlanceWidgetDeviceTest.kt) | `evidence/phase-5.md` | `VERIFIED` |
+
+---
+
 ### Phase 8: Release Pipeline, ABI Splits & Licenses (BS-09)
 
 | Requirement / Component | Design / Intent | Code Implementation | Verification / Tests | Artifacts / Evidence | Status |
@@ -99,7 +112,9 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 | **CI-RELEASE** | GitHub Actions release workflow triggering on `v*` tag push, enforcing zero-INTERNET policy, checking size budgets, and drafting release. | `.github` [`workflows/release.yml`](file:///C:/Dev/DailyRead/.github/workflows/release.yml) | Verified YAML syntax, build and size budget assertions | `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
 | **LICENSES-REGISTRY**| Complete audit and provenance registry for third-party libraries, fonts, and assets. | `docs/research` [`LICENSES.md`](file:///C:/Dev/DailyRead/docs/research/LICENSES.md) | License compatibility check (Zero GPL/AGPL, Readium BSD-3, Room Apache-2.0, Fonts OFL-1.1) | `docs/research/LICENSES.md`, `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
 
-## 6. Test Class Coverage Summary
+---
+
+## 7. Test Class Coverage Summary
 
 | Module | Test Class | Test Count | Pass / Fail | Primary Domain / Scope |
 |---|---|---|---|---|
@@ -109,14 +124,20 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 | `:core-domain` | `StreakEngineTest` | 10 | 10 / 0 | Pure streak engine rules, freezes, caps, travel grace, break handling |
 | `:app` | `IngestionEngineTest` | 6 | 6 / 0 | Two-stage ingestion, content dedup, cover extraction & missing-file handling |
 | `:app` | `PdfReadingCacheTest` | 5 | 5 / 0 | Bounded MRU PDF reading cache bounds, LRU eviction, file lifecycle |
+| `:app` | `ReminderCopySelectorTest` | 6 | 6 / 0 | Behavioral reminder copy engine, bandit tones, loss aversion, surrender hook |
+| `:app` | `ReminderSchedulerTest` | 4 | 4 / 0 | Inexact WorkManager reminder delay computation, 20:00 target, overnight wrap |
 | `:app` | `LibraryViewModelTest` | 9 | 9 / 0 | Library UI state machine, filter ribbon, search, sorting, coverPath mapping |
 | `:app` | `ReaderViewModelTest` | 5 | 5 / 0 | Reader state machine, exact resume restore, bookmarks, typography preferences |
 | `:app` | `ThemeTokensTest` | 4 | 4 / 0 | Warm botanical editorial color tokens, typography & shape contracts |
 | `:app` | `TodayViewModelTest` | 6 | 6 / 0 | Today dashboard UI state machine, progress ring, 30-day matrix, 03:00 rollover |
+| `:app` | `WidgetStateDeriverTest` | 2 | 2 / 0 | Glance widget Room state derivation, streak calculation, snapshot persistence |
 | `:app` | `ManifestSecurityTest` | 2 | 2 / 0 | Zero INTERNET permission, allowBackup=false enforcement |
 | `:app` (device) | `TodayDashboardDeviceTest` | 3 | 3 / 0 | Device Today dashboard launch, continue reading target, quick-add database write |
 | `:app` (device) | `LedgerDaoTest` | 9 | 9 / 0 | Room DAO round-trip tests: Books, Ledger, Settings, Widget, and PlanDao |
 | `:app` (device) | `ReaderResumeDeviceTest` | 4 | 4 / 0 | Device exact resume across process lifecycle, PDF cache, bookmarks, Amharic EPUB |
+| `:app` (device) | `SafRebootPersistenceTest` | 1 | 1 / 0 | SAF persistable tree URI permission survival across cold device reboot |
 | `:app` (device) | `PopulateLibraryDeviceTest` | 1 | 1 / 0 | Library population with synthetic fixtures and honest covers on device |
-| **Total Automated Tests** | **15 Test Classes** | **86 Tests** | **86 Passed (100%)** | **Zero failing tests** |
-
+| `:app` (device) | `BackupRestoreDeviceTest` | 1 | 1 / 0 | End-to-end SQLite archive backup export and restore verification |
+| `:app` (device) | `DailyReminderWorkerDeviceTest` | 2 | 2 / 0 | WorkManager worker suppression when goal met, successful execution when not met |
+| `:app` (device) | `GlanceWidgetDeviceTest` | 3 | 3 / 0 | Device widget state Room derivation, deep link intent, and 03:00 rollover worker |
+| **Total Automated Tests** | **22 Test Classes** | **105 Tests** | **105 Passed (100%)** | **Zero failing tests** |
