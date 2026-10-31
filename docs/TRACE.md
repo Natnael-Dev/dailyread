@@ -1,8 +1,8 @@
-# Traceability Matrix: Phase 1, Phase 2, Phase 3, Phase 4, Phase 5 & Phase 6 Requirements and Scenarios
+# Traceability Matrix: Phase 1 to Phase 8 Requirements and Scenarios
 
 **Project:** DailyRead  
 **Application ID:** `io.github.natnael_dev.dailyread`  
-**Current Gate:** Phase 6 Complete (Backup/Restore, Onboarding & Settings)  
+**Current Gate:** Phase 6 Complete & Phase 8 Release Ready  
 **Date:** 2026-10-31  
 
 ---
@@ -87,6 +87,7 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 | **PLAN-UI** | Reading plans management screen & creation dialog with dynamic quota preview and target duration presets. | `:app` [`PlansScreen.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/plans/PlansScreen.kt), [`PlansViewModel.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/plans/PlansViewModel.kt) | `:app` (device) [`LedgerDaoTest.kt#planDao_insertAndQueryActivePlan`](file:///C:/Dev/DailyRead/app/src/androidTest/kotlin/io/github/natnael_dev/dailyread/data/db/LedgerDaoTest.kt) | `evidence/phase-4.md`, `evidence/screenshots/plans_screen.png`, `evidence/screenshots/create_plan_dialog.png` | `VERIFIED` |
 | **NAV-DOCK** | Floating rounded bottom navigation dock linking Today, Library, and Plans. | `:app` [`MainActivity.kt`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/MainActivity.kt), [`LibraryScreen.kt#BottomNavBar`](file:///C:/Dev/DailyRead/app/src/main/java/io/github/natnael_dev/dailyread/ui/library/LibraryScreen.kt) | Live device execution on `Pixel_6_API_34` | `evidence/phase-4.md`, `evidence/screenshots/today_dashboard.png`, `evidence/screenshots/plans_screen.png` | `VERIFIED` |
 
+
 ---
 
 ## 6. Phase 5 — Background WorkManager Reminders & Jetpack Glance Widget
@@ -113,7 +114,18 @@ Every requirement, architectural decision, and domain scenario from Phase 1 (Cor
 
 ---
 
-## 8. Test Class Coverage Summary
+## 8. Phase 8 — Release Pipeline, ABI Splits & Licenses (BS-09)
+
+| Requirement / Component | Design / Intent | Code Implementation | Verification / Tests | Artifacts / Evidence | Status |
+|---|---|---|---|---|---|
+| **BS-09 (ABI Splits)** | Generate ABI-split APKs (`arm64-v8a`, `armeabi-v7a`) to enforce <30MB budget per split alongside universal APK fallback. | `:app` [`build.gradle.kts`](file:///C:/Dev/DailyRead/app/build.gradle.kts) (`splits.abi`) | `./gradlew assembleRelease` (arm64: 9.98 MB, armeabi-v7a: 8.98 MB, universal: 40.44 MB) | `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
+| **R8-RULES** | Keep Readium 3.1.1, Room 2.7.2, and Glance classes; aggressively shrink and strip all `android.util.Log` calls in release builds. | `:app` [`proguard-rules.pro`](file:///C:/Dev/DailyRead/app/proguard-rules.pro) | Emulator smoke test on `Pixel_6_API_34` (clean launch, PID 19159, zero crash) | `evidence/phase-8-release-pipeline.md`, `evidence/screenshots/release_smoke_test.png` | `VERIFIED` |
+| **CI-RELEASE** | GitHub Actions release workflow triggering on `v*` tag push, enforcing zero-INTERNET policy, checking size budgets, and drafting release. | `.github` [`workflows/release.yml`](file:///C:/Dev/DailyRead/.github/workflows/release.yml) | Verified YAML syntax, build and size budget assertions | `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
+| **LICENSES-REGISTRY**| Complete audit and provenance registry for third-party libraries, fonts, and assets. | `docs/research` [`LICENSES.md`](file:///C:/Dev/DailyRead/docs/research/LICENSES.md) | License compatibility check (Zero GPL/AGPL, Readium BSD-3, Room Apache-2.0, Fonts OFL-1.1) | `docs/research/LICENSES.md`, `evidence/phase-8-release-pipeline.md` | `VERIFIED` |
+
+---
+
+## 9. Test Class Coverage Summary
 
 | Module | Test Class | Test Count | Pass / Fail | Primary Domain / Scope |
 |---|---|---|---|---|
