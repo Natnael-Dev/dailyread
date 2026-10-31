@@ -77,18 +77,23 @@ class TodayDashboardDeviceTest {
             )
         }
 
-        // 4. Insert active reading plan for this book
+        // 4. Insert or update active reading plan for this book
         val planDao = db.planDao()
-        planDao.insertPlan(
-            PlanEntity(
-                bookId = bookId,
-                startDay = "2026-10-01",
-                targetDay = "2026-11-15",
-                startUnits = 0,
-                totalUnits = 310,
-                state = "ACTIVE"
+        val existingPlan = planDao.getActivePlan()
+        if (existingPlan != null) {
+            planDao.updatePlan(existingPlan.copy(bookId = bookId, state = "ACTIVE"))
+        } else {
+            planDao.insertPlan(
+                PlanEntity(
+                    bookId = bookId,
+                    startDay = "2026-10-01",
+                    targetDay = "2026-11-15",
+                    startUnits = 0,
+                    totalUnits = 310,
+                    state = "ACTIVE"
+                )
             )
-        )
+        }
     }
 
     @Test

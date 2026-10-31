@@ -131,4 +131,18 @@ class PdfReadingCacheTest {
         assertEquals(0, readingCache.getCachedFileCount())
         assertEquals(0L, readingCache.getCurrentCacheSizeBytes())
     }
+
+    @Test(expected = InsufficientStorageException::class)
+    fun `testLowStorageFailsGracefullyAndThrowsInsufficientStorageException`() {
+        val lowStorageCache = PdfReadingCache(
+            cacheDir = cacheDir,
+            maxCacheSizeBytes = 1000L,
+            maxCacheEntries = 3,
+            minRequiredFreeBytes = Long.MAX_VALUE // Simulates critically low storage space
+        )
+
+        lowStorageCache.getOrCreateCachedFile("book_low_storage") {
+            ByteArrayInputStream(ByteArray(50) { 0x41 })
+        }
+    }
 }

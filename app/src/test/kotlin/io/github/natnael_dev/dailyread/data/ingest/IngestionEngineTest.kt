@@ -323,7 +323,7 @@ class IngestionEngineTest {
             LibrarySourceEntity(treeUri = "content://tree/folder2", displayName = "Folder 2", addedAt = 1000L)
         )
 
-        val identicalBytes = "Same exact book content across two folders".toByteArray()
+        val identicalBytes = "%PDF-1.4\n/Type /Page\nSame exact book content across two folders\n%%EOF".toByteArray()
 
         // 1. Scan folder 1
         documentProvider.documents.clear()
@@ -505,5 +505,80 @@ class IngestionEngineTest {
 
         zos.close()
         return baos.toByteArray()
+    }
+
+    @Test
+    fun testStage2ZeroByteEpubMarkedAsUnreadableWithoutCrashing() = runTest {
+        val sourceId = librarySourceDao.insertSource(
+            LibrarySourceEntity(treeUri = "content://tree/books", displayName = "Books", addedAt = 1000L)
+        )
+
+        // Zero-byte EPUB document
+        val docUri = "content://tree/books/doc_zero_epub"
+        documentProvider.documents.add(
+            ScannedDocument(
+                documentId = "doc_zero_epub",
+                documentUri = docUri,
+                displayName = "empty_corrupt.epub",
+                sizeBytes = 0L,
+                lastModified = 1000L,
+                mimeType = "application/epub+zip"
+            )
+        )
+        documentProvider.fileContents[docUri] = ByteArray(0)
+
+        // Stage 1 scan
+        val scanSummary = ingestionEngine.scanSource(sourceId)
+        assertEquals(1, scanSummary.newBooks)
+
+        // Stage 2 fingerprinting
+        val completed = ingestionEngine.fingerprintPendingBooks()
+        assertEquals(1, completed)
+
+        val allBooks = bookDao.getBookById(1L)
+        assertNotNull(allBooks)
+        assertEquals("UNREADABLE", allBooks!!.fingerprintState)
+
+        val sources = bookDao.getSourcesForBook(allBooks.id)
+        assertEquals(1, sources.size)
+        assertEquals("UNREADABLE", sources[0].state)
+    }
+
+    @Test
+    fun testStage2CorruptedPdfMarkedAsUnreadableWithoutCrashing() = runTest {
+        val sourceId = librarySourceDao.insertSource(
+            LibrarySourceEntity(treeUri = "content://tree/books", displayName = "Books", addedAt = 1000L)
+        )
+
+        // Corrupted PDF document (garbage bytes without %PDF-)
+        val corruptBytes = "NOT_A_REAL_PDF_GARBAGE_BYTES_12345".toByteArray()
+        val docUri = "content://tree/books/doc_corrupt_pdf"
+        documentProvider.documents.add(
+            ScannedDocument(
+                documentId = "doc_corrupt_pdf",
+                documentUri = docUri,
+                displayName = "broken.pdf",
+                sizeBytes = corruptBytes.size.toLong(),
+                lastModified = 2000L,
+                mimeType = "application/pdf"
+            )
+        )
+        documentProvider.fileContents[docUri] = corruptBytes
+
+        // Stage 1 scan
+        val scanSummary = ingestionEngine.scanSource(sourceId)
+        assertEquals(1, scanSummary.newBooks)
+
+        // Stage 2 fingerprinting
+        val completed = ingestionEngine.fingerprintPendingBooks()
+        assertEquals(1, completed)
+
+        val allBooks = bookDao.getBookById(1L)
+        assertNotNull(allBooks)
+        assertEquals("UNREADABLE", allBooks!!.fingerprintState)
+
+        val sources = bookDao.getSourcesForBook(allBooks.id)
+        assertEquals(1, sources.size)
+        assertEquals("UNREADABLE", sources[0].state)
     }
 }

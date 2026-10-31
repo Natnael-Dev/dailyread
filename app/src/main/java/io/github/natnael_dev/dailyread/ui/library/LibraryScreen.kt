@@ -48,6 +48,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -606,7 +608,19 @@ fun BooksGrid(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         items(books, key = { it.id }) { book ->
-            BookGridCard(book = book, onClick = { onBookClick(book.id) })
+            val context = LocalContext.current
+            BookGridCard(
+                book = book,
+                onClick = {
+                    if (book.isMissing) {
+                        android.widget.Toast.makeText(context, "Cannot open: File is missing from device storage.", android.widget.Toast.LENGTH_SHORT).show()
+                    } else if (book.isUnreadable) {
+                        android.widget.Toast.makeText(context, "Cannot open: File is empty or corrupted.", android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        onBookClick(book.id)
+                    }
+                }
+            )
         }
     }
 }
@@ -623,7 +637,19 @@ fun BooksList(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(books, key = { it.id }) { book ->
-            BookListCard(book = book, onClick = { onBookClick(book.id) })
+            val context = LocalContext.current
+            BookListCard(
+                book = book,
+                onClick = {
+                    if (book.isMissing) {
+                        android.widget.Toast.makeText(context, "Cannot open: File is missing from device storage.", android.widget.Toast.LENGTH_SHORT).show()
+                    } else if (book.isUnreadable) {
+                        android.widget.Toast.makeText(context, "Cannot open: File is empty or corrupted.", android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        onBookClick(book.id)
+                    }
+                }
+            )
         }
     }
 }
@@ -633,9 +659,23 @@ fun BookGridCard(
     book: BookItemUiModel,
     onClick: () -> Unit = {}
 ) {
+    val a11yText = buildString {
+        append(book.title)
+        book.author?.let { append(", by $it") }
+        append(", format ${book.format}")
+        if (book.isMissing) {
+            append(", file is missing")
+        } else if (book.isUnreadable) {
+            append(", file is unreadable or corrupted")
+        } else {
+            append(", ${book.percentRead} percent read")
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .semantics { contentDescription = a11yText }
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = BotanicalSurfaceContainerLowest),
@@ -733,6 +773,18 @@ fun BookGridCard(
                     ) {
                         Text("⚠️ Missing", style = BotanicalTypography.labelSmall, color = Color.White, fontSize = 10.sp)
                     }
+                } else if (book.isUnreadable) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .background(BotanicalError, RoundedCornerShape(999.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text("⚠️ Unreadable", style = BotanicalTypography.labelSmall, color = Color.White, fontSize = 10.sp)
+                    }
                 }
 
                 // Format badge (top-right)
@@ -819,9 +871,23 @@ fun BookListCard(
     book: BookItemUiModel,
     onClick: () -> Unit = {}
 ) {
+    val a11yText = buildString {
+        append(book.title)
+        book.author?.let { append(", by $it") }
+        append(", format ${book.format}")
+        if (book.isMissing) {
+            append(", file is missing")
+        } else if (book.isUnreadable) {
+            append(", file is unreadable or corrupted")
+        } else {
+            append(", ${book.percentRead} percent read")
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .semantics { contentDescription = a11yText }
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = BotanicalSurfaceContainerLowest),
@@ -882,6 +948,8 @@ fun BookListCard(
                     )
                     if (book.isMissing) {
                         Text("Missing", style = BotanicalTypography.labelSmall, color = BotanicalError)
+                    } else if (book.isUnreadable) {
+                        Text("Unreadable", style = BotanicalTypography.labelSmall, color = BotanicalError)
                     }
                 }
                 Text(

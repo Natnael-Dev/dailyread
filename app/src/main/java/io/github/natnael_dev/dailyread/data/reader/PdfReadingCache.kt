@@ -7,6 +7,13 @@ import java.io.FileOutputStream
 import java.io.InputStream
 
 /**
+ * Thrown when internal cache storage has insufficient space to cache a PDF for reading.
+ */
+class InsufficientStorageException(
+    message: String = "Insufficient storage space to cache PDF for reading"
+) : java.io.IOException(message)
+
+/**
  * Approved DEC-021 Fallback: Bounded MRU Reading Cache for PDF Documents.
  *
  * Background & Rationale (DEC-021 / Risk R-01):
@@ -32,12 +39,14 @@ import java.io.InputStream
 class PdfReadingCache(
     private val cacheDir: File,
     val maxCacheSizeBytes: Long = DEFAULT_MAX_CACHE_SIZE_BYTES,
-    val maxCacheEntries: Int = DEFAULT_MAX_ENTRIES
+    val maxCacheEntries: Int = DEFAULT_MAX_ENTRIES,
+    val minRequiredFreeBytes: Long = DEFAULT_MIN_FREE_BYTES
 ) {
     companion object {
         const val CACHE_SUBDIR = "pdf_mru"
         const val DEFAULT_MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024L // 50 MB budget (DEC-021)
         const val DEFAULT_MAX_ENTRIES = 5
+        const val DEFAULT_MIN_FREE_BYTES = 5 * 1024 * 1024L // 5 MB minimum disk headroom
     }
 
     private val mruDirectory: File = File(cacheDir, CACHE_SUBDIR).apply {
@@ -69,6 +78,16 @@ class PdfReadingCache(
             return targetFile
         }
 
+        // Verify storage space availability before allocating temporary copy
+        if (minRequiredFreeBytes > 0 && mruDirectory.usableSpace < minRequiredFreeBytes) {
+            evictOldEntriesIfNeeded()
+            if (mruDirectory.usableSpace < minRequiredFreeBytes) {
+                throw InsufficientStorageException(
+                    "Device storage critically low: ${mruDirectory.usableSpace} bytes available, requires at least $minRequiredFreeBytes bytes."
+                )
+            }
+        }
+
         // Temporary download/copy file to ensure atomicity
         val tempFile = File(mruDirectory, "${safeKey}_temp_${System.currentTimeMillis()}.tmp")
         try {
@@ -91,6 +110,13 @@ class PdfReadingCache(
         } catch (e: Exception) {
             if (tempFile.exists()) {
                 tempFile.delete()
+            }
+            if (e is InsufficientStorageException) {
+                throw e
+            }
+            if (e is java.io.IOException && (e.message?.contains("ENOSPC", ignoreCase = true) == true ||
+                e.message?.contains("space", ignoreCase = true) == true)) {
+                throw InsufficientStorageException("Failed to cache PDF due to low storage: ${e.message}")
             }
             throw e
         }

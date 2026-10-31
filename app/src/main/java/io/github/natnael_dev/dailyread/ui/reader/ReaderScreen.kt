@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,6 +49,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -67,11 +73,7 @@ import io.github.natnael_dev.dailyread.R
 import io.github.natnael_dev.dailyread.data.db.dao.BookDao
 import io.github.natnael_dev.dailyread.data.db.entity.BookmarkEntity
 import io.github.natnael_dev.dailyread.data.reader.PdfReadingCache
-import io.github.natnael_dev.dailyread.ui.theme.BotanicalPrimary
-import io.github.natnael_dev.dailyread.ui.theme.BotanicalSurfaceContainerHigh
-import io.github.natnael_dev.dailyread.ui.theme.BotanicalTertiary
-import io.github.natnael_dev.dailyread.ui.theme.LiterataFontFamily
-import io.github.natnael_dev.dailyread.ui.theme.ManropeFontFamily
+import io.github.natnael_dev.dailyread.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -209,12 +211,65 @@ fun ReaderScreen(
             }
         }
 
+        // Error / Storage Low Notification Card
+        if (uiState.errorMessage != null && !uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(canvasBg)
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = BotanicalSurfaceContainerHigh),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "⚠️",
+                            fontSize = 32.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Unable to Open Document",
+                            style = BotanicalTypography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = BotanicalOnSurface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uiState.errorMessage ?: "",
+                            style = BotanicalTypography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = BotanicalOnSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Button(
+                            onClick = onBack,
+                            colors = ButtonDefaults.buttonColors(containerColor = BotanicalPrimary)
+                        ) {
+                            Text("Back to Library", color = BotanicalOnPrimary)
+                        }
+                    }
+                }
+            }
+        }
+
         // Tactile Bookmark Ribbon Attached to Page Top-Right (per Stitch design)
         val ribbonColor = if (uiState.isBookmarked) BotanicalTertiary else Color(0xFFD0C5B2)
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 24.dp)
+                .semantics {
+                    contentDescription = if (uiState.isBookmarked) "Page is bookmarked. Double tap to remove bookmark." else "Page is not bookmarked. Double tap to add bookmark."
+                    role = Role.Button
+                }
                 .clickable {
                     val loc = readerHost.getCurrentLocator()
                     if (loc != null) {
@@ -278,19 +333,24 @@ fun ReaderScreen(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = {
-                            val loc = readerHost.getCurrentLocator()
-                            if (loc != null) {
-                                viewModel.onLocatorChanged(
-                                    locatorJson = loc.toJSON().toString(),
-                                    progression = loc.locations.totalProgression ?: loc.locations.progression ?: 0.0,
-                                    pageNumber = loc.locations.position,
-                                    chapterTitle = loc.title
-                                )
+                        IconButton(
+                            onClick = {
+                                val loc = readerHost.getCurrentLocator()
+                                if (loc != null) {
+                                    viewModel.onLocatorChanged(
+                                        locatorJson = loc.toJSON().toString(),
+                                        progression = loc.locations.totalProgression ?: loc.locations.progression ?: 0.0,
+                                        pageNumber = loc.locations.position,
+                                        chapterTitle = loc.title
+                                    )
+                                }
+                                viewModel.onPause()
+                                onBack()
+                            },
+                            modifier = Modifier.semantics {
+                                contentDescription = "Close reader and return to library"
                             }
-                            viewModel.onPause()
-                            onBack()
-                        }) {
+                        ) {
                             Text(
                                 text = "←",
                                 fontSize = 20.sp,
@@ -324,17 +384,27 @@ fun ReaderScreen(
                     // Reader Tool Actions
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Bookmark Collection
-                        IconButton(onClick = { viewModel.openSheet(ReaderSheet.BOOKMARKS) }) {
+                        IconButton(
+                            onClick = { viewModel.openSheet(ReaderSheet.BOOKMARKS) },
+                            modifier = Modifier.semantics {
+                                contentDescription = "Open saved bookmarks list (${uiState.bookmarks.size} bookmarks)"
+                            }
+                        ) {
                             Text(
                                 text = "🔖",
                                 fontSize = 16.sp
                             )
                         }
                         // Search
-                        IconButton(onClick = {
-                            viewModel.onUserInteraction()
-                            viewModel.toggleBookmark("Indexed Search Note")
-                        }) {
+                        IconButton(
+                            onClick = {
+                                viewModel.onUserInteraction()
+                                viewModel.toggleBookmark("Indexed Search Note")
+                            },
+                            modifier = Modifier.semantics {
+                                contentDescription = "Quick bookmark search note"
+                            }
+                        ) {
                             Text(
                                 text = "🔍",
                                 fontSize = 15.sp
@@ -346,6 +416,10 @@ fun ReaderScreen(
                             color = BotanicalPrimary.copy(alpha = 0.15f),
                             modifier = Modifier
                                 .size(36.dp)
+                                .semantics {
+                                    contentDescription = "Open reader appearance, font size, and theme controls"
+                                    role = Role.Button
+                                }
                                 .clickable { viewModel.openSheet(ReaderSheet.TYPOGRAPHY) }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -790,7 +864,12 @@ fun TypographySheetContent(
             Surface(
                 shape = CircleShape,
                 color = Color(0xFFF1EEE4),
-                modifier = Modifier.clickable { onFontSizeChange(-0.1) }
+                modifier = Modifier
+                    .semantics {
+                        contentDescription = "Decrease font size"
+                        role = Role.Button
+                    }
+                    .clickable { onFontSizeChange(-0.1) }
             ) {
                 Text(
                     text = "A-",
@@ -812,7 +891,12 @@ fun TypographySheetContent(
             Surface(
                 shape = CircleShape,
                 color = Color(0xFFF1EEE4),
-                modifier = Modifier.clickable { onFontSizeChange(0.1) }
+                modifier = Modifier
+                    .semantics {
+                        contentDescription = "Increase font size"
+                        role = Role.Button
+                    }
+                    .clickable { onFontSizeChange(0.1) }
             ) {
                 Text(
                     text = "A+",

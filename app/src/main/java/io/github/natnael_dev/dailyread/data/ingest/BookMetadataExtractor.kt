@@ -10,7 +10,8 @@ data class ExtractedMetadata(
     val title: String?,
     val author: String?,
     val totalUnits: Int?,
-    val coverBytes: ByteArray? = null
+    val coverBytes: ByteArray? = null,
+    val isUnreadable: Boolean = false
 )
 
 object BookMetadataExtractor {
@@ -35,6 +36,9 @@ object BookMetadataExtractor {
 
         try {
             val allBytes = inputStream.readBytes()
+            if (allBytes.isEmpty()) {
+                return ExtractedMetadata(title = null, author = null, totalUnits = null, coverBytes = null, isUnreadable = true)
+            }
             var opfContent: String? = null
             var opfDir = ""
 
@@ -51,6 +55,10 @@ object BookMetadataExtractor {
                     zip.closeEntry()
                     entry = zip.nextEntry
                 }
+            }
+
+            if (opfContent == null) {
+                return ExtractedMetadata(title = null, author = null, totalUnits = null, coverBytes = null, isUnreadable = true)
             }
 
             var coverHref: String? = null
@@ -138,14 +146,21 @@ object BookMetadataExtractor {
                 }
             }
         } catch (e: Exception) {
-            // Graceful fallback
+            return ExtractedMetadata(
+                title = title,
+                author = author,
+                totalUnits = pageCount,
+                coverBytes = coverBytes,
+                isUnreadable = true
+            )
         }
 
         return ExtractedMetadata(
             title = title,
             author = author,
             totalUnits = pageCount,
-            coverBytes = coverBytes
+            coverBytes = coverBytes,
+            isUnreadable = false
         )
     }
 
@@ -160,11 +175,20 @@ object BookMetadataExtractor {
 
         try {
             val bytes = inputStream.readBytes()
+            if (bytes.isEmpty()) {
+                return ExtractedMetadata(title = null, author = null, totalUnits = null, coverBytes = null, isUnreadable = true)
+            }
             val text = String(bytes, Charsets.ISO_8859_1)
+            if (!text.contains("%PDF-")) {
+                return ExtractedMetadata(title = null, author = null, totalUnits = null, coverBytes = null, isUnreadable = true)
+            }
 
             val pageMatches = Regex("/Type\\s*/Page[^s]", RegexOption.IGNORE_CASE).findAll(text).count()
             if (pageMatches > 0) {
                 pageCount = pageMatches
+            } else {
+                // If %PDF- is present but 0 pages detected and no valid structure, mark unreadable
+                return ExtractedMetadata(title = null, author = null, totalUnits = null, coverBytes = null, isUnreadable = true)
             }
 
             val titleMatch = Regex("/Title\\s*\\(([^)]+)\\)").find(text)
@@ -178,17 +202,24 @@ object BookMetadataExtractor {
             }
 
             if (pdfCoverProvider != null) {
-                coverBytes = pdfCoverProvider.invoke()
+                coverBytes = try { pdfCoverProvider.invoke() } catch (e: Exception) { null }
             }
         } catch (e: Exception) {
-            // Graceful fallback
+            return ExtractedMetadata(
+                title = title,
+                author = author,
+                totalUnits = pageCount,
+                coverBytes = coverBytes,
+                isUnreadable = true
+            )
         }
 
         return ExtractedMetadata(
             title = title,
             author = author,
             totalUnits = pageCount,
-            coverBytes = coverBytes
+            coverBytes = coverBytes,
+            isUnreadable = false
         )
     }
 

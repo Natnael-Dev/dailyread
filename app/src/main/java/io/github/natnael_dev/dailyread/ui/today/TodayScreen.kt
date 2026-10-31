@@ -45,6 +45,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -268,10 +272,15 @@ fun WarmEditorialGreeting(
 
 @Composable
 fun StreakHeroCard(state: TodayUiState) {
+    val a11yStreak = "Current streak: ${state.currentStreak} ${if (state.currentStreak == 1) "day" else "days"}. Longest streak: ${state.bestStreak} days. Freezes available: ${state.freezesHeld} of 2."
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("streak_card"),
+            .testTag("streak_card")
+            .semantics(mergeDescendants = true) {
+                contentDescription = a11yStreak
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(1.dp, BotanicalOutlineVariant.copy(alpha = 0.3f)),
@@ -380,8 +389,14 @@ fun DailyProgressCard(
     state: TodayUiState,
     onQuickAdd: () -> Unit
 ) {
+    val a11yProgress = "Today's reading progress: ${state.pagesReadToday} of ${state.goalPages} pages read. ${state.progressPercent} percent of daily goal completed."
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = a11yProgress
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = BotanicalSurfaceContainer),
         border = BorderStroke(1.dp, BotanicalOutlineVariant.copy(alpha = 0.25f)),
@@ -949,6 +964,18 @@ fun ActivityMatrixCard(
                                 else -> BotanicalTypography.bodySmall.color
                             }
 
+                            val a11yDayDescription = buildString {
+                                append(dayModel.logicalDay.date.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d")))
+                                if (dayModel.isToday) append(", Today")
+                                when (dayModel.status) {
+                                    DayStatus.QUALIFIED, DayStatus.TODAY_QUALIFIED -> append(": Goal met, ${dayModel.pagesCounted} pages read")
+                                    DayStatus.FROZEN -> append(": Streak frozen")
+                                    DayStatus.TODAY_IN_PROGRESS -> append(": In progress, ${dayModel.pagesCounted} pages read")
+                                    DayStatus.MISSED -> append(": Goal missed, ${dayModel.pagesCounted} pages read")
+                                    DayStatus.FUTURE_BLANK -> append(": Upcoming day")
+                                }
+                            }
+
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -962,6 +989,10 @@ fun ActivityMatrixCard(
                                             Modifier.border(1.dp, BotanicalOutlineVariant.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                                         }
                                     )
+                                    .semantics {
+                                        contentDescription = a11yDayDescription
+                                        role = Role.Button
+                                    }
                                     .clickable { onSelectDay(dayModel) },
                                 contentAlignment = Alignment.Center
                             ) {

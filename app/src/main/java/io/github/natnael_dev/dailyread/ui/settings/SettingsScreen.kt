@@ -35,6 +35,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -207,6 +211,10 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(CircleShape)
+                                    .semantics {
+                                        contentDescription = "Decrease daily goal by 1 page"
+                                        role = Role.Button
+                                    }
                                     .clickable {
                                         if (uiState.dailyGoalPages > 1) {
                                             viewModel.setDailyGoal(uiState.dailyGoalPages - 1)
@@ -229,6 +237,10 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(CircleShape)
+                                    .semantics {
+                                        contentDescription = "Increase daily goal by 1 page"
+                                        role = Role.Button
+                                    }
                                     .clickable {
                                         if (uiState.dailyGoalPages < 100) {
                                             viewModel.setDailyGoal(uiState.dailyGoalPages + 1)
@@ -262,6 +274,10 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .clip(RoundedCornerShape(10.dp))
+                                    .semantics {
+                                        contentDescription = "Set daily goal to $pages pages"
+                                        role = Role.Button
+                                    }
                                     .clickable { viewModel.setDailyGoal(pages) },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) BotanicalPrimaryFixed else BotanicalSurfaceContainerHigh
